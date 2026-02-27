@@ -2,8 +2,8 @@ import type { AnyGoogleSQLTable } from '~/google-sql-core/table.ts';
 import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
 import { getColumnNameAndConfig } from '~/utils.ts';
-import { CockroachColumn } from './common.ts';
-import { CockroachIntColumnBaseBuilder } from './int.common.ts';
+import { GoogleSQLColumn } from './common.ts';
+import { GoogleSQLIntColumnBaseBuilder } from './int.common.ts';
 
 export class GoogleSQLBigInt53Builder extends GoogleSQLIntColumnBaseBuilder<{
 	dataType: 'number int53';

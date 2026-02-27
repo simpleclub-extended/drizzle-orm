@@ -1,4 +1,4 @@
-import type { ColumnBuilderBaseConfig, ColumnType, GeneratedIdentityConfig, IsIdentity } from '~/column-builder.ts';
+import type { ColumnBuilderBaseConfig, ColumnType } from '~/column-builder.ts';
 import { entityKind } from '~/entity.ts';
 import { GoogleSQLColumnWithArrayBuilder } from './common.ts';
 

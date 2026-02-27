@@ -52,6 +52,7 @@
 		"@effect/sql": "^0.48.5",
 		"@effect/sql-pg": "^0.49.7",
 		"@electric-sql/pglite": ">=0.2.0",
+		"@google-cloud/spanner": "^8.6.0",
 		"@libsql/client": ">=0.10.0",
 		"@libsql/client-wasm": ">=0.10.0",
 		"@neondatabase/serverless": ">=0.10.0",
@@ -163,6 +164,9 @@
 		"@sqlitecloud/drivers": {
 			"optional": true
 		},
+		"@google-cloud/spanner": {
+			"optional": true
+		},
 		"@tidbcloud/serverless": {
 			"optional": true
 		},
@@ -211,6 +215,7 @@
 		"@effect/sql-pg": "^0.49.7",
 		"@effect/sql-sqlite-node": "^0.49.1",
 		"@electric-sql/pglite": "^0.2.12",
+		"@google-cloud/spanner": "^8.6.0",
 		"@libsql/client": "^0.10.0",
 		"@libsql/client-wasm": "^0.10.0",
 		"@miniflare/d1": "^2.14.4",

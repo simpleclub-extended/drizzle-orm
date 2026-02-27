@@ -1,35 +1,34 @@
-// todo: Rewrite for Google SQL
-import type { AnyCockroachTable } from '~/cockroach-core/table.ts';
+import type { AnyGoogleSQLTable } from '~/google-sql-core/table.ts';
 import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
 import { type Equal, getColumnNameAndConfig } from '~/utils.ts';
-import { CockroachColumn } from './common.ts';
-import { CockroachDateColumnBaseBuilder } from './date.common.ts';
+import { GoogleSQLColumn } from './common.ts';
+import { GoogleSQLDateColumnBaseBuilder } from './date.common.ts';
 
-export class CockroachDateBuilder extends CockroachDateColumnBaseBuilder<{
+export class GoogleSQLDateBuilder extends GoogleSQLDateColumnBaseBuilder<{
 	dataType: 'object date';
 	data: Date;
 	driverParam: string;
 }> {
-	static override readonly [entityKind]: string = 'CockroachDateBuilder';
+	static override readonly [entityKind]: string = 'GoogleSQLDateBuilder';
 
 	constructor(name: string) {
-		super(name, 'object date', 'CockroachDate');
+		super(name, 'object date', 'GoogleSQLDate');
 	}
 
 	/** @internal */
 	override build<TTableName extends string>(
-		table: AnyCockroachTable<{ name: TTableName }>,
+		table: AnyGoogleSQLTable<{ name: TTableName }>,
 	) {
-		return new CockroachDate(
+		return new GoogleSQLDate(
 			table,
 			this.config,
 		);
 	}
 }
 
-export class CockroachDate<T extends ColumnBaseConfig<'object date'>> extends CockroachColumn<T> {
-	static override readonly [entityKind]: string = 'CockroachDate';
+export class GoogleSQLDate<T extends ColumnBaseConfig<'object date'>> extends GoogleSQLColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSQLDate';
 
 	getSQLType(): string {
 		return 'date';
@@ -45,30 +44,30 @@ export class CockroachDate<T extends ColumnBaseConfig<'object date'>> extends Co
 	}
 }
 
-export class CockroachDateStringBuilder extends CockroachDateColumnBaseBuilder<{
+export class GoogleSQLDateStringBuilder extends GoogleSQLDateColumnBaseBuilder<{
 	dataType: 'string date';
 	data: string;
 	driverParam: string;
 }> {
-	static override readonly [entityKind]: string = 'CockroachDateStringBuilder';
+	static override readonly [entityKind]: string = 'GoogleSQLDateStringBuilder';
 
 	constructor(name: string) {
-		super(name, 'string date', 'CockroachDateString');
+		super(name, 'string date', 'GoogleSQLDateString');
 	}
 
 	/** @internal */
 	override build<TTableName extends string>(
-		table: AnyCockroachTable<{ name: TTableName }>,
+		table: AnyGoogleSQLTable<{ name: TTableName }>,
 	) {
-		return new CockroachDateString(
+		return new GoogleSQLDateString(
 			table,
 			this.config,
 		);
 	}
 }
 
-export class CockroachDateString<T extends ColumnBaseConfig<'string date'>> extends CockroachColumn<T> {
-	static override readonly [entityKind]: string = 'CockroachDateString';
+export class GoogleSQLDateString<T extends ColumnBaseConfig<'string date'>> extends GoogleSQLColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSQLDateString';
 
 	getSQLType(): string {
 		return 'date';
@@ -80,22 +79,22 @@ export class CockroachDateString<T extends ColumnBaseConfig<'string date'>> exte
 	}
 }
 
-export interface CockroachDateConfig<T extends 'date' | 'string' = 'date' | 'string'> {
+export interface GoogleSQLDateConfig<T extends 'date' | 'string' = 'date' | 'string'> {
 	mode: T;
 }
 
-export function date<TMode extends CockroachDateConfig['mode'] & {}>(
-	config?: CockroachDateConfig<TMode>,
-): Equal<TMode, 'date'> extends true ? CockroachDateBuilder : CockroachDateStringBuilder;
-export function date<TMode extends CockroachDateConfig['mode'] & {}>(
+export function date<TMode extends GoogleSQLDateConfig['mode'] & {}>(
+	config?: GoogleSQLDateConfig<TMode>,
+): Equal<TMode, 'date'> extends true ? GoogleSQLDateBuilder : GoogleSQLDateStringBuilder;
+export function date<TMode extends GoogleSQLDateConfig['mode'] & {}>(
 	name: string,
-	config?: CockroachDateConfig<TMode>,
-): Equal<TMode, 'date'> extends true ? CockroachDateBuilder
-	: CockroachDateStringBuilder;
-export function date(a?: string | CockroachDateConfig, b?: CockroachDateConfig) {
-	const { name, config } = getColumnNameAndConfig<CockroachDateConfig>(a, b);
+	config?: GoogleSQLDateConfig<TMode>,
+): Equal<TMode, 'date'> extends true ? GoogleSQLDateBuilder
+	: GoogleSQLDateStringBuilder;
+export function date(a?: string | GoogleSQLDateConfig, b?: GoogleSQLDateConfig) {
+	const { name, config } = getColumnNameAndConfig<GoogleSQLDateConfig>(a, b);
 	if (config?.mode === 'date') {
-		return new CockroachDateBuilder(name);
+		return new GoogleSQLDateBuilder(name);
 	}
-	return new CockroachDateStringBuilder(name);
+	return new GoogleSQLDateStringBuilder(name);
 }

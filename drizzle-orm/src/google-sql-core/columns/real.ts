@@ -1,4 +1,3 @@
-// todo: Rewrite for Google SQL
 import type { AnyGoogleSQLTable, GoogleSQLTable } from '~/google-sql-core/table.ts';
 import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';

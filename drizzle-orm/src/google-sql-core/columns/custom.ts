@@ -1,11 +1,10 @@
-// todo: Rewrite for Google SQL
-import type { AnyCockroachTable, CockroachTable } from '~/cockroach-core/table.ts';
+import type { AnyGoogleSQLTable, GoogleSQLTable } from '~/google-sql-core/table.ts';
 import type { ColumnBuilderBaseConfig } from '~/column-builder.ts';
 import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
 import type { SQL, SQLGenerator } from '~/sql/sql.ts';
 import { type Equal, getColumnNameAndConfig } from '~/utils.ts';
-import { CockroachColumn, CockroachColumnWithArrayBuilder } from './common.ts';
+import { GoogleSQLColumn, GoogleSQLColumnWithArrayBuilder } from './common.ts';
 
 export type ConvertCustomConfig<T extends Partial<CustomTypeValues>> =
 	& {
@@ -16,12 +15,12 @@ export type ConvertCustomConfig<T extends Partial<CustomTypeValues>> =
 	& (T['notNull'] extends true ? { notNull: true } : {})
 	& (T['default'] extends true ? { hasDefault: true } : {});
 
-export interface CockroachCustomColumnInnerConfig {
+export interface GoogleSQLCustomColumnInnerConfig {
 	customTypeValues: CustomTypeValues;
 }
 
-export class CockroachCustomColumnBuilder<T extends ColumnBuilderBaseConfig<'custom'>>
-	extends CockroachColumnWithArrayBuilder<
+export class GoogleSQLCustomColumnBuilder<T extends ColumnBuilderBaseConfig<'custom'>>
+	extends GoogleSQLColumnWithArrayBuilder<
 		T,
 		{
 			fieldConfig: CustomTypeValues['config'];
@@ -29,31 +28,31 @@ export class CockroachCustomColumnBuilder<T extends ColumnBuilderBaseConfig<'cus
 		}
 	>
 {
-	static override readonly [entityKind]: string = 'CockroachCustomColumnBuilder';
+	static override readonly [entityKind]: string = 'GoogleSQLCustomColumnBuilder';
 
 	constructor(
 		name: string,
 		fieldConfig: CustomTypeValues['config'],
 		customTypeParams: CustomTypeParams<any>,
 	) {
-		super(name, 'custom', 'CockroachCustomColumn');
+		super(name, 'custom', 'GoogleSQLCustomColumn');
 		this.config.fieldConfig = fieldConfig;
 		this.config.customTypeParams = customTypeParams;
 	}
 
 	/** @internal */
 	build<TTableName extends string>(
-		table: AnyCockroachTable<{ name: TTableName }>,
+		table: AnyGoogleSQLTable<{ name: TTableName }>,
 	) {
-		return new CockroachCustomColumn(
+		return new GoogleSQLCustomColumn(
 			table,
 			this.config,
 		);
 	}
 }
 
-export class CockroachCustomColumn<T extends ColumnBaseConfig<'custom'>> extends CockroachColumn<T> {
-	static override readonly [entityKind]: string = 'CockroachCustomColumn';
+export class GoogleSQLCustomColumn<T extends ColumnBaseConfig<'custom'>> extends GoogleSQLColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSQLCustomColumn';
 
 	private sqlName: string;
 	private mapTo?: (value: T['data']) => T['driverParam'];
@@ -62,8 +61,8 @@ export class CockroachCustomColumn<T extends ColumnBaseConfig<'custom'>> extends
 	private forJsonSelect?: (identifier: SQL, sql: SQLGenerator, arrayDimensions?: number) => SQL;
 
 	constructor(
-		table: CockroachTable<any>,
-		config: CockroachCustomColumnBuilder<T>['config'],
+		table: GoogleSQLTable<any>,
+		config: GoogleSQLCustomColumnBuilder<T>['config'],
 	) {
 		super(table, config);
 		this.sqlName = config.customTypeParams.dataType(config.fieldConfig);
@@ -93,13 +92,15 @@ export class CockroachCustomColumn<T extends ColumnBaseConfig<'custom'>> extends
 		const type = (parenPos + 1) ? rawType.slice(0, parenPos) : rawType;
 
 		switch (type) {
-			case 'geometry':
+			case 'bytes':
 			case 'timestamp':
-			case 'decimal':
-			case 'int8': {
-				const arrVal = '[]'.repeat(arrayDimensions ?? 0);
-
-				return sql`${identifier}::text${sql.raw(arrVal).if(arrayDimensions)}`;
+			case 'numeric':
+			case 'int64': {
+				if (!arrayDimensions) {
+    				return sql`cast(${identifier} as string)`;
+				}
+				const arrayType = 'array<'.repeat(arrayDimensions) + 'string' + '>'.repeat(arrayDimensions);
+				return sql`cast(${identifier} as ${sql.raw(arrayType)})`;
 			}
 			default: {
 				return identifier;
@@ -285,23 +286,25 @@ export interface CustomTypeParams<T extends CustomTypeValues> {
 	 *
 	 * Used by [relational queries](https://orm.drizzle.team/docs/rqb-v2)
 	 *
-	 * Following types are being casted to text by default: `bytea`, `geometry`, `timestamp`, `numeric`, `bigint`
+	 * Following types are being casted to text by default: `bytes`, `timestamp`, `numeric`, `int64`
 	 * @example
-	 * For example, when using bigint we need to cast field to text to preserve data integrity
+	 * For example, when using int64 we need to cast field to text to preserve data integrity
 	 * ```
 	 * forJsonSelect(identifier: SQL, sql: SQLGenerator, arrayDimensions?: number): SQL {
-	 * 	return sql`${identifier}::text`
+	 * 	return sql`cast(${identifier} as string)`
 	 * },
 	 * ```
 	 *
 	 * This will change query from:
 	 * ```
 	 * SELECT
-	 * 	row_to_json("t".*)
+	 * 	to_json(struct(
+	 * 		`table`.`custom_int64` AS `int64`
+	 * 	))
 	 * 	FROM
 	 * 	(
 	 * 		SELECT
-	 * 		"table"."custom_bigint" AS "bigint"
+	 * 		"table"."custom_int64" AS "int64"
 	 * 		FROM
 	 * 		"table"
 	 * 	) AS "t"
@@ -309,11 +312,13 @@ export interface CustomTypeParams<T extends CustomTypeValues> {
 	 * to:
 	 * ```
 	 * SELECT
-	 * 	row_to_json("t".*)
+	 * 	to_json(struct(
+	 * 		`table`.`custom_int64` AS `int64`
+	 * 	))
 	 * 	FROM
 	 * 	(
 	 * 		SELECT
-	 * 		"table"."custom_bigint"::text AS "bigint"
+	 * 		cast("table"."custom_int64" as string) AS "int64"
 	 * 		FROM
 	 * 		"table"
 	 * 	) AS "t"
@@ -336,35 +341,35 @@ export interface CustomTypeParams<T extends CustomTypeValues> {
 }
 
 /**
- * Custom cockroach database data type generator
+ * Custom google-sql database data type generator
  */
 export function customType<T extends CustomTypeValues = CustomTypeValues>(
 	customTypeParams: CustomTypeParams<T>,
 ): Equal<T['configRequired'], true> extends true ? {
 		<TConfig extends Record<string, any> & T['config']>(
 			fieldConfig: TConfig,
-		): CockroachCustomColumnBuilder<ConvertCustomConfig<T>>;
+		): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>>;
 		(
 			dbName: string,
 			fieldConfig: T['config'],
-		): CockroachCustomColumnBuilder<ConvertCustomConfig<T>>;
+		): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>>;
 	}
 	: {
-		(): CockroachCustomColumnBuilder<ConvertCustomConfig<T>>;
+		(): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>>;
 		<TConfig extends Record<string, any> & T['config']>(
 			fieldConfig?: TConfig,
-		): CockroachCustomColumnBuilder<ConvertCustomConfig<T>>;
+		): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>>;
 		(
 			dbName: string,
 			fieldConfig?: T['config'],
-		): CockroachCustomColumnBuilder<ConvertCustomConfig<T>>;
+		): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>>;
 	}
 {
 	return (
 		a?: string | T['config'],
 		b?: T['config'],
-	): CockroachCustomColumnBuilder<ConvertCustomConfig<T>> => {
+	): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>> => {
 		const { name, config } = getColumnNameAndConfig<T['config']>(a, b);
-		return new CockroachCustomColumnBuilder(name, config, customTypeParams);
+		return new GoogleSQLCustomColumnBuilder(name, config, customTypeParams);
 	};
 }

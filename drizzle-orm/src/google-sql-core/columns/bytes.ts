@@ -1,26 +1,27 @@
+import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
 import type { GoogleSQLTable } from '../table.ts';
 import { GoogleSQLColumn, GoogleSQLColumnBuilder } from './common.ts';
 
-export class GoogleSQLByteaBuilder extends GoogleSQLColumnBuilder<{
+export class GoogleSQLBytesBuilder extends GoogleSQLColumnBuilder<{
 	dataType: 'object buffer';
 	data: Buffer;
 	driverParam: Buffer;
 }> {
-	static override readonly [entityKind]: string = 'GoogleSQLByteaBuilder';
+	static override readonly [entityKind]: string = 'GoogleSQLBytesBuilder';
 
 	constructor(name: string) {
-		super(name, 'object buffer', 'GoogleSQLBytea');
+		super(name, 'object buffer', 'GoogleSQLBytes');
 	}
 
 	/** @internal */
 	override build(table: GoogleSQLTable<any>) {
-		return new GoogleSQLBytea(table, this.config as any);
+		return new GoogleSQLBytes(table, this.config as any);
 	}
 }
 
-export class GoogleSQLBytea extends GoogleSQLColumn<'object buffer'> {
-	static override readonly [entityKind]: string = 'GoogleSQLBytea';
+export class GoogleSQLBytes<T extends ColumnBaseConfig<'object buffer'>> extends GoogleSQLColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSQLBytes';
 
 	override mapFromDriverValue(value: Buffer | Uint8Array | string): Buffer {
 		// todo: Check whether this is correct for Google SQL.
@@ -40,6 +41,6 @@ export class GoogleSQLBytea extends GoogleSQLColumn<'object buffer'> {
 	}
 }
 
-export function bytes(name?: string): GoogleSQLByteaBuilder {
-	return new GoogleSQLByteaBuilder(name ?? '');
+export function bytes(name?: string): GoogleSQLBytesBuilder {
+	return new GoogleSQLBytesBuilder(name ?? '');
 }
