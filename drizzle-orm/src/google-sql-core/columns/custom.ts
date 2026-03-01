@@ -1,10 +1,10 @@
-import type { AnyGoogleSQLTable, GoogleSQLTable } from '~/google-sql-core/table.ts';
+import type { AnyGoogleSqlTable, GoogleSqlTable } from '~/google-sql-core/table.ts';
 import type { ColumnBuilderBaseConfig } from '~/column-builder.ts';
 import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
 import type { SQL, SQLGenerator } from '~/sql/sql.ts';
 import { type Equal, getColumnNameAndConfig } from '~/utils.ts';
-import { GoogleSQLColumn, GoogleSQLColumnWithArrayBuilder } from './common.ts';
+import { GoogleSqlColumn, GoogleSqlColumnWithArrayBuilder } from './common.ts';
 
 export type ConvertCustomConfig<T extends Partial<CustomTypeValues>> =
 	& {
@@ -15,12 +15,12 @@ export type ConvertCustomConfig<T extends Partial<CustomTypeValues>> =
 	& (T['notNull'] extends true ? { notNull: true } : {})
 	& (T['default'] extends true ? { hasDefault: true } : {});
 
-export interface GoogleSQLCustomColumnInnerConfig {
+export interface GoogleSqlCustomColumnInnerConfig {
 	customTypeValues: CustomTypeValues;
 }
 
-export class GoogleSQLCustomColumnBuilder<T extends ColumnBuilderBaseConfig<'custom'>>
-	extends GoogleSQLColumnWithArrayBuilder<
+export class GoogleSqlCustomColumnBuilder<T extends ColumnBuilderBaseConfig<'custom'>>
+	extends GoogleSqlColumnWithArrayBuilder<
 		T,
 		{
 			fieldConfig: CustomTypeValues['config'];
@@ -28,31 +28,31 @@ export class GoogleSQLCustomColumnBuilder<T extends ColumnBuilderBaseConfig<'cus
 		}
 	>
 {
-	static override readonly [entityKind]: string = 'GoogleSQLCustomColumnBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlCustomColumnBuilder';
 
 	constructor(
 		name: string,
 		fieldConfig: CustomTypeValues['config'],
 		customTypeParams: CustomTypeParams<any>,
 	) {
-		super(name, 'custom', 'GoogleSQLCustomColumn');
+		super(name, 'custom', 'GoogleSqlCustomColumn');
 		this.config.fieldConfig = fieldConfig;
 		this.config.customTypeParams = customTypeParams;
 	}
 
 	/** @internal */
 	build<TTableName extends string>(
-		table: AnyGoogleSQLTable<{ name: TTableName }>,
+		table: AnyGoogleSqlTable<{ name: TTableName }>,
 	) {
-		return new GoogleSQLCustomColumn(
+		return new GoogleSqlCustomColumn(
 			table,
 			this.config,
 		);
 	}
 }
 
-export class GoogleSQLCustomColumn<T extends ColumnBaseConfig<'custom'>> extends GoogleSQLColumn<T> {
-	static override readonly [entityKind]: string = 'GoogleSQLCustomColumn';
+export class GoogleSqlCustomColumn<T extends ColumnBaseConfig<'custom'>> extends GoogleSqlColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSqlCustomColumn';
 
 	private sqlName: string;
 	private mapTo?: (value: T['data']) => T['driverParam'];
@@ -61,8 +61,8 @@ export class GoogleSQLCustomColumn<T extends ColumnBaseConfig<'custom'>> extends
 	private forJsonSelect?: (identifier: SQL, sql: SQLGenerator, arrayDimensions?: number) => SQL;
 
 	constructor(
-		table: GoogleSQLTable<any>,
-		config: GoogleSQLCustomColumnBuilder<T>['config'],
+		table: GoogleSqlTable<any>,
+		config: GoogleSqlCustomColumnBuilder<T>['config'],
 	) {
 		super(table, config);
 		this.sqlName = config.customTypeParams.dataType(config.fieldConfig);
@@ -348,28 +348,28 @@ export function customType<T extends CustomTypeValues = CustomTypeValues>(
 ): Equal<T['configRequired'], true> extends true ? {
 		<TConfig extends Record<string, any> & T['config']>(
 			fieldConfig: TConfig,
-		): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>>;
+		): GoogleSqlCustomColumnBuilder<ConvertCustomConfig<T>>;
 		(
 			dbName: string,
 			fieldConfig: T['config'],
-		): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>>;
+		): GoogleSqlCustomColumnBuilder<ConvertCustomConfig<T>>;
 	}
 	: {
-		(): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>>;
+		(): GoogleSqlCustomColumnBuilder<ConvertCustomConfig<T>>;
 		<TConfig extends Record<string, any> & T['config']>(
 			fieldConfig?: TConfig,
-		): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>>;
+		): GoogleSqlCustomColumnBuilder<ConvertCustomConfig<T>>;
 		(
 			dbName: string,
 			fieldConfig?: T['config'],
-		): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>>;
+		): GoogleSqlCustomColumnBuilder<ConvertCustomConfig<T>>;
 	}
 {
 	return (
 		a?: string | T['config'],
 		b?: T['config'],
-	): GoogleSQLCustomColumnBuilder<ConvertCustomConfig<T>> => {
+	): GoogleSqlCustomColumnBuilder<ConvertCustomConfig<T>> => {
 		const { name, config } = getColumnNameAndConfig<T['config']>(a, b);
-		return new GoogleSQLCustomColumnBuilder(name, config, customTypeParams);
+		return new GoogleSqlCustomColumnBuilder(name, config, customTypeParams);
 	};
 }

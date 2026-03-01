@@ -1,4 +1,4 @@
-function parseGoogleSQLArrayValue(arrayString: string, startFrom: number, inQuotes: boolean): [string, number] {
+function parseGoogleSqlArrayValue(arrayString: string, startFrom: number, inQuotes: boolean): [string, number] {
 	for (let i = startFrom; i < arrayString.length; i++) {
 		const char = arrayString[i];
 
@@ -23,7 +23,7 @@ function parseGoogleSQLArrayValue(arrayString: string, startFrom: number, inQuot
 	return [arrayString.slice(startFrom).replace(/\\/g, ''), arrayString.length];
 }
 
-export function parseGoogleSQLNestedArray(arrayString: string, startFrom = 0): [any[], number] {
+export function parseGoogleSqlNestedArray(arrayString: string, startFrom = 0): [any[], number] {
 	const result: any[] = [];
 	let i = startFrom;
 	let lastCharIsComma = false;
@@ -53,7 +53,7 @@ export function parseGoogleSQLNestedArray(arrayString: string, startFrom = 0): [
 		}
 
 		if (char === '"') {
-			const [value, startFrom] = parseGoogleSQLArrayValue(arrayString, i + 1, true);
+			const [value, startFrom] = parseGoogleSqlArrayValue(arrayString, i + 1, true);
 			result.push(value);
 			i = startFrom;
 			continue;
@@ -64,13 +64,13 @@ export function parseGoogleSQLNestedArray(arrayString: string, startFrom = 0): [
 		}
 
 		if (char === '[') {
-			const [value, startFrom] = parseGoogleSQLNestedArray(arrayString, i + 1);
+			const [value, startFrom] = parseGoogleSqlNestedArray(arrayString, i + 1);
 			result.push(value);
 			i = startFrom;
 			continue;
 		}
 
-		const [value, newStartFrom] = parseGoogleSQLArrayValue(arrayString, i, false);
+		const [value, newStartFrom] = parseGoogleSqlArrayValue(arrayString, i, false);
 		result.push(value);
 		i = newStartFrom;
 	}
@@ -78,16 +78,16 @@ export function parseGoogleSQLNestedArray(arrayString: string, startFrom = 0): [
 	return [result, i];
 }
 
-export function parseGoogleSQLArray(arrayString: string): any[] {
-	const [result] = parseGoogleSQLNestedArray(arrayString, 1);
+export function parseGoogleSqlArray(arrayString: string): any[] {
+	const [result] = parseGoogleSqlNestedArray(arrayString, 1);
 	return result;
 }
 
-export function makeGoogleSQLArray(array: any[]): string {
+export function makeGoogleSqlArray(array: any[]): string {
 	return `[${
 		array.map((item) => {
 			if (Array.isArray(item)) {
-				return makeGoogleSQLArray(item);
+				return makeGoogleSqlArray(item);
 			}
 
 			if (typeof item === 'string') {

@@ -1,11 +1,11 @@
-import type { AnyGoogleSQLTable, GoogleSQLTable } from '~/google-sql-core/table.ts';
+import type { AnyGoogleSqlTable, GoogleSqlTable } from '~/google-sql-core/table.ts';
 import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
 import { type Equal, getColumnNameAndConfig } from '~/utils.ts';
-import { GoogleSQLColumn } from './common.ts';
-import { GoogleSQLDateColumnBaseBuilder } from './date.common.ts';
+import { GoogleSqlColumn } from './common.ts';
+import { GoogleSqlDateColumnBaseBuilder } from './date.common.ts';
 
-export class GoogleSQLTimestampBuilder extends GoogleSQLDateColumnBaseBuilder<
+export class GoogleSqlTimestampBuilder extends GoogleSqlDateColumnBaseBuilder<
 	{
 		dataType: 'object date';
 		data: Date;
@@ -13,32 +13,32 @@ export class GoogleSQLTimestampBuilder extends GoogleSQLDateColumnBaseBuilder<
 	},
 	{ withTimezone: boolean; precision: number | undefined }
 > {
-	static override readonly [entityKind]: string = 'GoogleSQLTimestampBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlTimestampBuilder';
 
 	constructor(name: string, withTimezone: boolean, precision: number | undefined) {
-		super(name, 'object date', 'GoogleSQLTimestamp');
+		super(name, 'object date', 'GoogleSqlTimestamp');
 		this.config.withTimezone = withTimezone;
 		this.config.precision = precision;
 	}
 
 	/** @internal */
 	override build<TTableName extends string>(
-		table: AnyGoogleSQLTable<{ name: TTableName }>,
+		table: AnyGoogleSqlTable<{ name: TTableName }>,
 	) {
-		return new GoogleSQLTimestamp(
+		return new GoogleSqlTimestamp(
 			table,
 			this.config,
 		);
 	}
 }
 
-export class GoogleSQLTimestamp<T extends ColumnBaseConfig<'object date'>> extends GoogleSQLColumn<T> {
-	static override readonly [entityKind]: string = 'GoogleSQLTimestamp';
+export class GoogleSqlTimestamp<T extends ColumnBaseConfig<'object date'>> extends GoogleSqlColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSqlTimestamp';
 
 	readonly withTimezone: boolean;
 	readonly precision: number | undefined;
 
-	constructor(table: GoogleSQLTable<any>, config: GoogleSQLTimestampBuilder['config']) {
+	constructor(table: GoogleSqlTable<any>, config: GoogleSqlTimestampBuilder['config']) {
 		super(table, config);
 		this.withTimezone = config.withTimezone;
 		this.precision = config.precision;
@@ -58,7 +58,7 @@ export class GoogleSQLTimestamp<T extends ColumnBaseConfig<'object date'>> exten
 	};
 }
 
-export class GoogleSQLTimestampStringBuilder extends GoogleSQLDateColumnBaseBuilder<
+export class GoogleSqlTimestampStringBuilder extends GoogleSqlDateColumnBaseBuilder<
 	{
 		dataType: 'string timestamp';
 		data: string;
@@ -66,34 +66,34 @@ export class GoogleSQLTimestampStringBuilder extends GoogleSQLDateColumnBaseBuil
 	},
 	{ withTimezone: boolean; precision: number | undefined }
 > {
-	static override readonly [entityKind]: string = 'GoogleSQLTimestampStringBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlTimestampStringBuilder';
 
 	constructor(name: string, withTimezone: boolean, precision: number | undefined) {
-		super(name, 'string timestamp', 'GoogleSQLTimestampString');
+		super(name, 'string timestamp', 'GoogleSqlTimestampString');
 		this.config.withTimezone = withTimezone;
 		this.config.precision = precision;
 	}
 
 	/** @internal */
 	override build<TTableName extends string>(
-		table: AnyGoogleSQLTable<{ name: TTableName }>,
+		table: AnyGoogleSqlTable<{ name: TTableName }>,
 	) {
-		return new GoogleSQLTimestampString(
+		return new GoogleSqlTimestampString(
 			table,
 			this.config,
 		);
 	}
 }
 
-export class GoogleSQLTimestampString<T extends ColumnBaseConfig<'string timestamp'>> extends GoogleSQLColumn<T> {
-	static override readonly [entityKind]: string = 'GoogleSQLTimestampString';
+export class GoogleSqlTimestampString<T extends ColumnBaseConfig<'string timestamp'>> extends GoogleSqlColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSqlTimestampString';
 
 	readonly withTimezone: boolean;
 	readonly precision: number | undefined;
 
 	constructor(
-		table: GoogleSQLTable<any>,
-		config: GoogleSQLTimestampStringBuilder['config'],
+		table: GoogleSqlTable<any>,
+		config: GoogleSqlTimestampStringBuilder['config'],
 	) {
 		super(table, config);
 		this.withTimezone = config.withTimezone;
@@ -112,25 +112,25 @@ export class GoogleSQLTimestampString<T extends ColumnBaseConfig<'string timesta
 
 export type Precision = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-export interface GoogleSQLTimestampConfig<TMode extends 'date' | 'string' = 'date' | 'string'> {
+export interface GoogleSqlTimestampConfig<TMode extends 'date' | 'string' = 'date' | 'string'> {
 	mode?: TMode;
 	precision?: Precision;
 	withTimezone?: boolean;
 }
 
-export function timestamp<TMode extends GoogleSQLTimestampConfig['mode'] & {}>(
-	config?: GoogleSQLTimestampConfig<TMode>,
-): Equal<TMode, 'string'> extends true ? GoogleSQLTimestampStringBuilder
-	: GoogleSQLTimestampBuilder;
-export function timestamp<TMode extends GoogleSQLTimestampConfig['mode'] & {}>(
+export function timestamp<TMode extends GoogleSqlTimestampConfig['mode'] & {}>(
+	config?: GoogleSqlTimestampConfig<TMode>,
+): Equal<TMode, 'string'> extends true ? GoogleSqlTimestampStringBuilder
+	: GoogleSqlTimestampBuilder;
+export function timestamp<TMode extends GoogleSqlTimestampConfig['mode'] & {}>(
 	name: string,
-	config?: GoogleSQLTimestampConfig<TMode>,
-): Equal<TMode, 'string'> extends true ? GoogleSQLTimestampStringBuilder
-	: GoogleSQLTimestampBuilder;
-export function timestamp(a?: string | GoogleSQLTimestampConfig, b: GoogleSQLTimestampConfig = {}) {
-	const { name, config } = getColumnNameAndConfig<GoogleSQLTimestampConfig | undefined>(a, b);
+	config?: GoogleSqlTimestampConfig<TMode>,
+): Equal<TMode, 'string'> extends true ? GoogleSqlTimestampStringBuilder
+	: GoogleSqlTimestampBuilder;
+export function timestamp(a?: string | GoogleSqlTimestampConfig, b: GoogleSqlTimestampConfig = {}) {
+	const { name, config } = getColumnNameAndConfig<GoogleSqlTimestampConfig | undefined>(a, b);
 	if (config?.mode === 'string') {
-		return new GoogleSQLTimestampStringBuilder(name, config.withTimezone ?? false, config.precision);
+		return new GoogleSqlTimestampStringBuilder(name, config.withTimezone ?? false, config.precision);
 	}
-	return new GoogleSQLTimestampBuilder(name, config?.withTimezone ?? false, config?.precision);
+	return new GoogleSqlTimestampBuilder(name, config?.withTimezone ?? false, config?.precision);
 }

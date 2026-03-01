@@ -1,34 +1,34 @@
-import type { AnyGoogleSQLTable, GoogleSQLTable } from '~/google-sql-core/table.ts';
+import type { AnyGoogleSqlTable, GoogleSqlTable } from '~/google-sql-core/table.ts';
 import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
-import { GoogleSQLColumn, GoogleSQLColumnBuilder } from './common.ts';
+import { GoogleSqlColumn, GoogleSqlColumnBuilder } from './common.ts';
 
-export class GoogleSQLJsonBuilder extends GoogleSQLColumnBuilder<{
+export class GoogleSqlJsonBuilder extends GoogleSqlColumnBuilder<{
 	dataType: 'object json';
 	data: unknown;
 	driverParam: unknown;
 }> {
-	static override readonly [entityKind]: string = 'GoogleSQLJsonBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlJsonBuilder';
 
 	constructor(name: string) {
-		super(name, 'object json', 'GoogleSQLJson');
+		super(name, 'object json', 'GoogleSqlJson');
 	}
 
 	/** @internal */
 	override build<TTableName extends string>(
-		table: AnyGoogleSQLTable<{ name: TTableName }>,
+		table: AnyGoogleSqlTable<{ name: TTableName }>,
 	) {
-		return new GoogleSQLJson(
+		return new GoogleSqlJson(
 			table,
 			this.config,
 		);
 	}
 }
 
-export class GoogleSQLJson<T extends ColumnBaseConfig<'object json'>> extends GoogleSQLColumn<T> {
-	static override readonly [entityKind]: string = 'GoogleSQLJson';
+export class GoogleSqlJson<T extends ColumnBaseConfig<'object json'>> extends GoogleSqlColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSqlJson';
 
-	constructor(table: GoogleSQLTable<any>, config: GoogleSQLJsonBuilder['config']) {
+	constructor(table: GoogleSqlTable<any>, config: GoogleSqlJsonBuilder['config']) {
 		super(table, config);
 	}
 
@@ -53,5 +53,5 @@ export class GoogleSQLJson<T extends ColumnBaseConfig<'object json'>> extends Go
 }
 
 export function json(name?: string) {
-	return new GoogleSQLJsonBuilder(name ?? '');
+	return new GoogleSqlJsonBuilder(name ?? '');
 }

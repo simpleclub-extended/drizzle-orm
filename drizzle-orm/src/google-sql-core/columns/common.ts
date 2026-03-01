@@ -12,28 +12,28 @@ import type { Update } from '~/utils.ts';
 
 import type { ForeignKey, UpdateDeleteAction } from '~/google-sql-core/foreign-keys.ts';
 import { ForeignKeyBuilder } from '~/google-sql-core/foreign-keys.ts';
-import type { AnyGoogleSQLTable, GoogleSQLTable } from '~/google-sql-core/table.ts';
+import type { AnyGoogleSqlTable, GoogleSqlTable } from '~/google-sql-core/table.ts';
 import type { SQL } from '~/sql/sql.ts';
 import { iife } from '~/tracing-utils.ts';
-import { makeGoogleSQLArray, parseGoogleSQLArray } from '../utils/array.ts';
+import { makeGoogleSqlArray, parseGoogleSqlArray } from '../utils/array.ts';
 
-export type GoogleSQLColumns = Record<string, GoogleSQLColumn<any>>;
+export type GoogleSqlColumns = Record<string, GoogleSqlColumn<any>>;
 
 export interface ReferenceConfig {
-	ref: () => GoogleSQLColumn;
+	ref: () => GoogleSqlColumn;
 	config: {
 		name?: string;
 		onUpdate?: UpdateDeleteAction;
 		onDelete?: UpdateDeleteAction;
 	};
 }
-export abstract class GoogleSQLColumnBuilder<
+export abstract class GoogleSqlColumnBuilder<
 	T extends ColumnBuilderBaseConfig<ColumnType> = ColumnBuilderBaseConfig<ColumnType>,
 	TRuntimeConfig extends object = object,
 > extends ColumnBuilder<T, TRuntimeConfig> {
 	private foreignKeyConfigs: ReferenceConfig[] = [];
 
-	static override readonly [entityKind]: string = 'GoogleSQLColumnBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlColumnBuilder';
 
 	references(
 		ref: ReferenceConfig['ref'],
@@ -65,7 +65,7 @@ export abstract class GoogleSQLColumnBuilder<
 	}
 
 	/** @internal */
-	buildForeignKeys(column: GoogleSQLColumn, table: GoogleSQLTable): ForeignKey[] {
+	buildForeignKeys(column: GoogleSqlColumn, table: GoogleSqlTable): ForeignKey[] {
 		return this.foreignKeyConfigs.map(({ ref, config }) => {
 			return iife(
 				(ref, config) => {
@@ -88,23 +88,23 @@ export abstract class GoogleSQLColumnBuilder<
 	}
 
 	/** @internal */
-	abstract build(table: GoogleSQLTable): GoogleSQLColumn<any>;
+	abstract build(table: GoogleSqlTable): GoogleSqlColumn<any>;
 
 	/** @internal */
 	buildExtraConfigColumn<TTableName extends string>(
-		table: AnyGoogleSQLTable<{ name: TTableName }>,
+		table: AnyGoogleSqlTable<{ name: TTableName }>,
 	): ExtraConfigColumn {
 		return new ExtraConfigColumn(table, this.config);
 	}
 }
 
-export abstract class GoogleSQLColumnWithArrayBuilder<
+export abstract class GoogleSqlColumnWithArrayBuilder<
 	T extends ColumnBuilderBaseConfig<ColumnType> = ColumnBuilderBaseConfig<ColumnType>,
 	TRuntimeConfig extends object = object,
-> extends GoogleSQLColumnBuilder<T, TRuntimeConfig> {
-	static override readonly [entityKind]: string = 'GoogleSQLColumnWithArrayBuilder';
+> extends GoogleSqlColumnBuilder<T, TRuntimeConfig> {
+	static override readonly [entityKind]: string = 'GoogleSqlColumnWithArrayBuilder';
 	array<TSize extends number | undefined = undefined>(size?: TSize): Omit<
-		GoogleSQLArrayBuilder<
+		GoogleSqlArrayBuilder<
 			& {
 				name: string;
 				dataType: 'array basecolumn';
@@ -118,26 +118,26 @@ export abstract class GoogleSQLColumnWithArrayBuilder<
 		>,
 		'array'
 	> {
-		return new GoogleSQLArrayBuilder(
+		return new GoogleSqlArrayBuilder(
 			this.config.name,
-			this as GoogleSQLColumnWithArrayBuilder<any, any>,
+			this as GoogleSqlColumnWithArrayBuilder<any, any>,
 			size as any,
 		) as any; // size as any
 	}
 }
 
-// To understand how to use `GoogleSQLColumn` and `AnyGoogleSQLColumn`, see `Column` and `AnyColumn` documentation.
-export abstract class GoogleSQLColumn<
+// To understand how to use `GoogleSqlColumn` and `AnyGoogleSqlColumn`, see `Column` and `AnyColumn` documentation.
+export abstract class GoogleSqlColumn<
 	T extends ColumnBaseConfig<ColumnType> = ColumnBaseConfig<ColumnType>,
 	TRuntimeConfig extends object = {},
 > extends Column<T, TRuntimeConfig> {
-	static override readonly [entityKind]: string = 'GoogleSQLColumn';
+	static override readonly [entityKind]: string = 'GoogleSqlColumn';
 
 	/** @internal */
-	override readonly table: GoogleSQLTable;
+	override readonly table: GoogleSqlTable;
 
 	constructor(
-		table: GoogleSQLTable,
+		table: GoogleSqlTable,
 		config: ColumnBuilderRuntimeConfig<T['data']> & TRuntimeConfig,
 	) {
 		super(table, config);
@@ -155,7 +155,7 @@ export type IndexedExtraConfigType = { order?: 'asc' | 'desc' };
 
 export class ExtraConfigColumn<
 	T extends ColumnBaseConfig<ColumnType> = ColumnBaseConfig<ColumnType>,
-> extends GoogleSQLColumn<T, IndexedExtraConfigType> {
+> extends GoogleSqlColumn<T, IndexedExtraConfigType> {
 	static override readonly [entityKind]: string = 'ExtraConfigColumn';
 
 	override getSQLType(): string {
@@ -200,52 +200,52 @@ export class IndexedColumn {
 	indexConfig: IndexedExtraConfigType;
 }
 
-export type AnyGoogleSQLColumn<TPartial extends Partial<ColumnBaseConfig<ColumnType>> = {}> = GoogleSQLColumn<
+export type AnyGoogleSqlColumn<TPartial extends Partial<ColumnBaseConfig<ColumnType>> = {}> = GoogleSqlColumn<
 	Required<Update<ColumnBaseConfig<ColumnType>, TPartial>>
 >;
 
-export type GoogleSQLArrayColumnBuilderBaseConfig = ColumnBuilderBaseConfig<'array basecolumn'> & {
+export type GoogleSqlArrayColumnBuilderBaseConfig = ColumnBuilderBaseConfig<'array basecolumn'> & {
 	baseBuilder: ColumnBuilderBaseConfig<ColumnType>;
 };
 
-export class GoogleSQLArrayBuilder<
-	T extends GoogleSQLArrayColumnBuilderBaseConfig,
-	TBase extends ColumnBuilderBaseConfig<ColumnType> | GoogleSQLArrayColumnBuilderBaseConfig,
-> extends GoogleSQLColumnWithArrayBuilder<
+export class GoogleSqlArrayBuilder<
+	T extends GoogleSqlArrayColumnBuilderBaseConfig,
+	TBase extends ColumnBuilderBaseConfig<ColumnType> | GoogleSqlArrayColumnBuilderBaseConfig,
+> extends GoogleSqlColumnWithArrayBuilder<
 	T & {
-		baseBuilder: TBase extends GoogleSQLArrayColumnBuilderBaseConfig ? GoogleSQLArrayBuilder<
+		baseBuilder: TBase extends GoogleSqlArrayColumnBuilderBaseConfig ? GoogleSqlArrayBuilder<
 				TBase,
 				TBase extends { baseBuilder: infer TBaseBuilder extends ColumnBuilderBaseConfig<any> } ? TBaseBuilder
 					: never
 			>
-			: GoogleSQLColumnWithArrayBuilder<TBase, {}>;
+			: GoogleSqlColumnWithArrayBuilder<TBase, {}>;
 	},
 	{
-		baseBuilder: TBase extends GoogleSQLArrayColumnBuilderBaseConfig ? GoogleSQLArrayBuilder<
+		baseBuilder: TBase extends GoogleSqlArrayColumnBuilderBaseConfig ? GoogleSqlArrayBuilder<
 				TBase,
 				TBase extends { baseBuilder: infer TBaseBuilder extends ColumnBuilderBaseConfig<any> } ? TBaseBuilder
 					: never
 			>
-			: GoogleSQLColumnWithArrayBuilder<TBase, {}>;
+			: GoogleSqlColumnWithArrayBuilder<TBase, {}>;
 		length: number | undefined;
 	}
 > {
-	static override readonly [entityKind]: string = 'GoogleSQLArrayBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlArrayBuilder';
 
 	constructor(
 		name: string,
-		baseBuilder: GoogleSQLArrayBuilder<T, TBase>['config']['baseBuilder'],
+		baseBuilder: GoogleSqlArrayBuilder<T, TBase>['config']['baseBuilder'],
 		length: number | undefined,
 	) {
-		super(name, 'array basecolumn', 'GoogleSQLArray');
+		super(name, 'array basecolumn', 'GoogleSqlArray');
 		this.config.baseBuilder = baseBuilder;
 		this.config.length = length;
 	}
 
 	/** @internal */
-	override build(table: GoogleSQLTable) {
+	override build(table: GoogleSqlTable) {
 		const baseColumn: any = this.config.baseBuilder.build(table);
-		return new GoogleSQLArray(
+		return new GoogleSqlArray(
 			table,
 			this.config as any,
 			baseColumn,
@@ -253,19 +253,19 @@ export class GoogleSQLArrayBuilder<
 	}
 }
 
-export class GoogleSQLArray<
+export class GoogleSqlArray<
 	T extends ColumnBaseConfig<'array basecolumn'> & {
 		length: number | undefined;
 		baseBuilder: ColumnBuilderBaseConfig<ColumnType>;
 	},
 	TBase extends ColumnBuilderBaseConfig<ColumnType>,
-> extends GoogleSQLColumn<T, {}> {
-	static override readonly [entityKind]: string = 'GoogleSQLArray';
+> extends GoogleSqlColumn<T, {}> {
+	static override readonly [entityKind]: string = 'GoogleSqlArray';
 
 	constructor(
-		table: GoogleSQLTable<any>,
-		config: GoogleSQLArrayBuilder<T, TBase>['config'],
-		readonly baseColumn: GoogleSQLColumn,
+		table: GoogleSqlTable<any>,
+		config: GoogleSqlArrayBuilder<T, TBase>['config'],
+		readonly baseColumn: GoogleSqlColumn,
 		readonly range?: [number | undefined, number | undefined],
 	) {
 		super(table, config);
@@ -277,7 +277,7 @@ export class GoogleSQLArray<
 
 	override mapFromDriverValue(value: unknown[] | string): T['data'] {
 		if (typeof value === 'string') {
-			value = parseGoogleSQLArray(value);
+			value = parseGoogleSqlArray(value);
 		}
 		return value.map((v) => this.baseColumn.mapFromDriverValue(v));
 	}
@@ -286,7 +286,7 @@ export class GoogleSQLArray<
 	mapFromJsonValue(value: unknown[] | string): T['data'] {
 		if (typeof value === 'string') {
 			// Thank you node-postgres for not parsing enum arrays
-			value = parseGoogleSQLArray(value);
+			value = parseGoogleSqlArray(value);
 		}
 
 		const base = this.baseColumn;
@@ -300,11 +300,11 @@ export class GoogleSQLArray<
 		const a = value.map((v) =>
 			v === null
 				? null
-				: is(this.baseColumn, GoogleSQLArray)
+				: is(this.baseColumn, GoogleSqlArray)
 				? this.baseColumn.mapToDriverValue(v as unknown[], true)
 				: this.baseColumn.mapToDriverValue(v)
 		);
 		if (isNestedArray) return a;
-		return makeGoogleSQLArray(a);
+		return makeGoogleSqlArray(a);
 	}
 }

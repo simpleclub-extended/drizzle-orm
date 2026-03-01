@@ -1,37 +1,33 @@
-import { bigint, int8 } from './bigint.ts';
 import { bool } from './bool.ts';
 import { bytes } from './bytes.ts';
 import { customType } from './custom.ts';
 import { date } from './date.ts';
-import { decimal, numeric } from './decimal.ts';
-import { doublePrecision, float } from './float.ts';
-import { interval } from './interval.ts';
+import { float32 } from './float32.ts';
+import { doublePrecision, float64 } from './float64.ts';
+import { int64 } from './int64.ts';
 import { json } from './json.ts';
-import { real } from './real.ts';
+import { numeric } from './numeric.ts';
 import { string, text } from './string.ts';
 import { timestamp } from './timestamp.ts';
 import { uuid } from './uuid.ts';
 
-export function getGoogleSQLColumnBuilders() {
+export function getGoogleSqlColumnBuilders() {
 	return {
-		bigint,
 		bool,
 		bytes,
 		customType,
 		date,
+		float32,
+		float64,
 		doublePrecision,
-		int8,
-		interval,
+		int64,
 		json,
 		numeric,
-		decimal,
-		real,
+		string,
 		text,
 		timestamp,
 		uuid,
-		float,
-		string,
 	};
 }
 
-export type GoogleSQLColumnsBuilders = ReturnType<typeof getGoogleSQLColumnBuilders>;
+export type GoogleSqlColumnsBuilders = ReturnType<typeof getGoogleSqlColumnBuilders>;

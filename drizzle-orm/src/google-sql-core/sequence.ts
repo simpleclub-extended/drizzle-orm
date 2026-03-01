@@ -1,39 +1,39 @@
 import { entityKind, is } from '~/entity.ts';
 
-export type GoogleSQLSequenceOptions = {
+export type GoogleSqlSequenceOptions = {
 	sequenceKind: 'bit_reversed_positive';
 	skipRangeMin?: number | string;
 	skipRangeMax?: number | string;
 	startWithCounter?: number | string;
 };
 
-export class GoogleSQLSequence {
-	static readonly [entityKind]: string = 'GoogleSQLSequence';
+export class GoogleSqlSequence {
+	static readonly [entityKind]: string = 'GoogleSqlSequence';
 
 	constructor(
 		public readonly seqName: string,
-		public readonly seqOptions: GoogleSQLSequenceOptions | undefined,
+		public readonly seqOptions: GoogleSqlSequenceOptions | undefined,
 		public readonly schema: string | undefined,
 	) {
 	}
 }
 
-export function googleSQLSequence(
+export function googleSqlSequence(
 	name: string,
-	options?: GoogleSQLSequenceOptions,
-): GoogleSQLSequence {
-	return googleSQLSequenceWithSchema(name, options, undefined);
+	options?: GoogleSqlSequenceOptions,
+): GoogleSqlSequence {
+	return googleSqlSequenceWithSchema(name, options, undefined);
 }
 
 /** @internal */
-export function googleSQLSequenceWithSchema(
+export function googleSqlSequenceWithSchema(
 	name: string,
-	options?: GoogleSQLSequenceOptions,
+	options?: GoogleSqlSequenceOptions,
 	schema?: string,
-): GoogleSQLSequence {
-	return new GoogleSQLSequence(name, options, schema);
+): GoogleSqlSequence {
+	return new GoogleSqlSequence(name, options, schema);
 }
 
-export function isGoogleSQLSequence(obj: unknown): obj is GoogleSQLSequence {
-	return is(obj, GoogleSQLSequence);
+export function isGoogleSqlSequence(obj: unknown): obj is GoogleSqlSequence {
+	return is(obj, GoogleSqlSequence);
 }

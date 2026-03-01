@@ -1,12 +1,12 @@
-import type { GoogleSQLDialect } from '~/google-sql-core/dialect.ts';
+import type { GoogleSqlDialect } from '~/google-sql-core/dialect.ts';
 import type {
-	GoogleSQLPreparedQuery,
-	GoogleSQLQueryResultHKT,
-	GoogleSQLQueryResultKind,
-	GoogleSQLSession,
+	GoogleSqlPreparedQuery,
+	GoogleSqlQueryResultHKT,
+	GoogleSqlQueryResultKind,
+	GoogleSqlSession,
 	PreparedQueryConfig,
 } from '~/google-sql-core/session.ts';
-import type { GoogleSQLTable } from '~/google-sql-core/table.ts';
+import type { GoogleSqlTable } from '~/google-sql-core/table.ts';
 import type { GetColumnData } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
 import type { TypedQueryBuilder } from '~/query-builders/query-builder.ts';
@@ -27,34 +27,35 @@ import {
 	orderSelectedFields,
 	type UpdateSet,
 } from '~/utils.ts';
-import type { GoogleSQLColumn } from '../columns/common.ts';
+import type { GoogleSqlColumn } from '../columns/common.ts';
 import type {
 	SelectedFields,
 	SelectedFieldsOrdered,
 } from './select.types.ts';
+import {GoogleSqlDeleteWithout} from "./delete";
 
-export interface GoogleSQLUpdateConfig {
+export interface GoogleSqlUpdateConfig {
 	where?: SQL | undefined;
 	set: UpdateSet;
-	table: GoogleSQLTable;
+	table: GoogleSqlTable;
 	returningFields?: SelectedFields;
 	returning?: SelectedFieldsOrdered;
-	withList?: Subquery[];
+	withAction?: boolean;
 }
 
-export type GoogleSQLUpdateSetSource<TTable extends GoogleSQLTable> =
+export type GoogleSqlUpdateSetSource<TTable extends GoogleSqlTable> =
 	& {
 		[Key in keyof InferInsertModel<TTable>]?:
 			| GetColumnData<TTable['_']['columns'][Key]>
 			| SQL
-			| GoogleSQLColumn
+			| GoogleSqlColumn
 			| Placeholder
 			| undefined;
 	}
 	& {};
 
-export class GoogleSQLUpdateBuilder<TTable extends GoogleSQLTable, TQueryResult extends GoogleSQLQueryResultHKT> {
-	static readonly [entityKind]: string = 'GoogleSQLUpdateBuilder';
+export class GoogleSqlUpdateBuilder<TTable extends GoogleSqlTable, TQueryResult extends GoogleSqlQueryResultHKT> {
+	static readonly [entityKind]: string = 'GoogleSqlUpdateBuilder';
 
 	declare readonly _: {
 		readonly table: TTable;
@@ -62,28 +63,26 @@ export class GoogleSQLUpdateBuilder<TTable extends GoogleSQLTable, TQueryResult 
 
 	constructor(
 		private table: TTable,
-		private session: GoogleSQLSession,
-		private dialect: GoogleSQLDialect,
-		private withList?: Subquery[],
+		private session: GoogleSqlSession,
+		private dialect: GoogleSqlDialect,
 	) {}
 
-	set(values: GoogleSQLUpdateSetSource<TTable>): GoogleSQLUpdateBase<TTable, TQueryResult> {
-		return new GoogleSQLUpdateBase<TTable, TQueryResult>(
+	set(values: GoogleSqlUpdateSetSource<TTable>): GoogleSqlUpdateBase<TTable, TQueryResult> {
+		return new GoogleSqlUpdateBase<TTable, TQueryResult>(
 			this.table,
 			mapUpdateSet(this.table, values),
 			this.session,
 			this.dialect,
-			this.withList,
 		);
 	}
 }
 
-export type GoogleSQLUpdateWithout<
-	T extends AnyGoogleSQLUpdate,
+export type GoogleSqlUpdateWithout<
+	T extends AnyGoogleSqlUpdate,
 	TDynamic extends boolean,
 	K extends keyof T & string,
 > = TDynamic extends true ? T : Omit<
-	GoogleSQLUpdateBase<
+	GoogleSqlUpdateBase<
 		T['_']['table'],
 		T['_']['queryResult'],
 		T['_']['selectedFields'],
@@ -95,9 +94,9 @@ export type GoogleSQLUpdateWithout<
 	T['_']['excludedMethods'] | K
 >;
 
-export type GoogleSQLUpdateReturningAll<T extends AnyGoogleSQLUpdate, TDynamic extends boolean> =
-	GoogleSQLUpdateWithout<
-		GoogleSQLUpdateBase<
+export type GoogleSqlUpdateReturningAll<T extends AnyGoogleSqlUpdate, TDynamic extends boolean> =
+	GoogleSqlUpdateWithout<
+		GoogleSqlUpdateBase<
 			T['_']['table'],
 			T['_']['queryResult'],
 			T['_']['table']['_']['columns'],
@@ -110,12 +109,12 @@ export type GoogleSQLUpdateReturningAll<T extends AnyGoogleSQLUpdate, TDynamic e
 		'returning'
 	>;
 
-export type GoogleSQLUpdateReturning<
-	T extends AnyGoogleSQLUpdate,
+export type GoogleSqlUpdateReturning<
+	T extends AnyGoogleSqlUpdate,
 	TDynamic extends boolean,
 	TSelectedFields extends SelectedFields,
-> = GoogleSQLUpdateWithout<
-	GoogleSQLUpdateBase<
+> = GoogleSqlUpdateWithout<
+	GoogleSqlUpdateBase<
 		T['_']['table'],
 		T['_']['queryResult'],
 		TSelectedFields,
@@ -128,26 +127,26 @@ export type GoogleSQLUpdateReturning<
 	'returning'
 >;
 
-export type GoogleSQLUpdatePrepare<T extends AnyGoogleSQLUpdate> = GoogleSQLPreparedQuery<
+export type GoogleSqlUpdatePrepare<T extends AnyGoogleSqlUpdate> = GoogleSqlPreparedQuery<
 	PreparedQueryConfig & {
-		execute: T['_']['returning'] extends undefined ? GoogleSQLQueryResultKind<T['_']['queryResult'], never>
+		execute: T['_']['returning'] extends undefined ? GoogleSqlQueryResultKind<T['_']['queryResult'], never>
 			: T['_']['returning'][];
 	}
 >;
 
-export type GoogleSQLUpdateDynamic<T extends AnyGoogleSQLUpdate> = GoogleSQLUpdate<
+export type GoogleSqlUpdateDynamic<T extends AnyGoogleSqlUpdate> = GoogleSqlUpdate<
 	T['_']['table'],
 	T['_']['queryResult'],
 	T['_']['returning']
 >;
 
-export type GoogleSQLUpdate<
-	TTable extends GoogleSQLTable = GoogleSQLTable,
-	TQueryResult extends GoogleSQLQueryResultHKT = GoogleSQLQueryResultHKT,
+export type GoogleSqlUpdate<
+	TTable extends GoogleSqlTable = GoogleSqlTable,
+	TQueryResult extends GoogleSqlQueryResultHKT = GoogleSqlQueryResultHKT,
 	TSelectedFields extends ColumnsSelection | undefined = undefined,
 	TReturning extends Record<string, unknown> | undefined = Record<string, unknown> | undefined,
 	TNullabilityMap extends Record<string, JoinNullability> = Record<TTable['_']['name'], 'not-null'>,
-> = GoogleSQLUpdateBase<
+> = GoogleSqlUpdateBase<
 	TTable,
 	TQueryResult,
 	TSelectedFields,
@@ -157,11 +156,11 @@ export type GoogleSQLUpdate<
 	never
 >;
 
-export type AnyGoogleSQLUpdate = GoogleSQLUpdateBase<any, any, any, any, any, any, any>;
+export type AnyGoogleSqlUpdate = GoogleSqlUpdateBase<any, any, any, any, any, any, any>;
 
-export interface GoogleSQLUpdateBase<
-	TTable extends GoogleSQLTable,
-	TQueryResult extends GoogleSQLQueryResultHKT,
+export interface GoogleSqlUpdateBase<
+	TTable extends GoogleSqlTable,
+	TQueryResult extends GoogleSqlQueryResultHKT,
 	TSelectedFields extends ColumnsSelection | undefined = undefined,
 	TReturning extends Record<string, unknown> | undefined = undefined,
 	TNullabilityMap extends Record<string, JoinNullability> = Record<TTable['_']['name'], 'not-null'>,
@@ -170,17 +169,17 @@ export interface GoogleSQLUpdateBase<
 > extends
 	TypedQueryBuilder<
 		TSelectedFields,
-		TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[]
+		TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[]
 	>,
-	QueryPromise<TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[]>,
+	QueryPromise<TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[]>,
 	RunnableQuery<
-		TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[],
-		'google-sql'
+		TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[],
+		'googlesql'
 	>,
 	SQLWrapper
 {
 	readonly _: {
-		readonly dialect: 'google-sql';
+		readonly dialect: 'googlesql';
 		readonly table: TTable;
 		readonly nullabilityMap: TNullabilityMap;
 		readonly queryResult: TQueryResult;
@@ -188,13 +187,13 @@ export interface GoogleSQLUpdateBase<
 		readonly returning: TReturning;
 		readonly dynamic: TDynamic;
 		readonly excludedMethods: TExcludedMethods;
-		readonly result: TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[];
+		readonly result: TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[];
 	};
 }
 
-export class GoogleSQLUpdateBase<
-	TTable extends GoogleSQLTable,
-	TQueryResult extends GoogleSQLQueryResultHKT,
+export class GoogleSqlUpdateBase<
+	TTable extends GoogleSqlTable,
+	TQueryResult extends GoogleSqlQueryResultHKT,
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	TSelectedFields extends ColumnsSelection | undefined = undefined,
 	TReturning extends Record<string, unknown> | undefined = undefined,
@@ -204,28 +203,28 @@ export class GoogleSQLUpdateBase<
 	TDynamic extends boolean = false,
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	TExcludedMethods extends string = never,
-> extends QueryPromise<TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[]>
+> extends QueryPromise<TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[]>
 	implements
 		RunnableQuery<
-			TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[],
-			'google-sql'
+			TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[],
+			'googlesql'
 		>,
 		SQLWrapper
 {
-	static override readonly [entityKind]: string = 'GoogleSQLUpdate';
+	static override readonly [entityKind]: string = 'GoogleSqlUpdate';
 
-	private config: GoogleSQLUpdateConfig;
+	private config: GoogleSqlUpdateConfig;
 	private tableName: string | undefined;
 
 	constructor(
 		table: TTable,
 		set: UpdateSet,
-		private session: GoogleSQLSession,
-		private dialect: GoogleSQLDialect,
-		withList?: Subquery[],
+		private session: GoogleSqlSession,
+		private dialect: GoogleSqlDialect,
+		withAction?: boolean,
 	) {
 		super();
-		this.config = { set, table, withList };
+		this.config = { set, table, withAction };
 		this.tableName = getTableLikeName(table);
 	}
 
@@ -262,7 +261,7 @@ export class GoogleSQLUpdateBase<
 	 *   .where(or(eq(cars.color, 'green'), eq(cars.color, 'blue')));
 	 * ```
 	 */
-	where(where: SQL | undefined): GoogleSQLUpdateWithout<this, TDynamic, 'where'> {
+	where(where: SQL | undefined): GoogleSqlUpdateWithout<this, TDynamic, 'where'> {
 		this.config.where = where;
 		return this as any;
 	}
@@ -289,19 +288,40 @@ export class GoogleSQLUpdateBase<
 	 *   .returning({ id: cars.id, brand: cars.brand });
 	 * ```
 	 */
-	returning(): GoogleSQLUpdateReturningAll<this, TDynamic>;
+	returning(): GoogleSqlUpdateReturningAll<this, TDynamic>;
 	returning<TSelectedFields extends SelectedFields>(
 		fields: TSelectedFields,
-	): GoogleSQLUpdateReturning<this, TDynamic, TSelectedFields>;
+	): GoogleSqlUpdateReturning<this, TDynamic, TSelectedFields>;
 	returning(
 		fields?: SelectedFields,
-	): GoogleSQLUpdateWithout<AnyGoogleSQLUpdate, TDynamic, 'returning'> {
+	): GoogleSqlUpdateWithout<AnyGoogleSqlUpdate, TDynamic, 'returning'> {
 		if (!fields) {
 			fields = Object.assign({}, this.config.table[Table.Symbol.Columns]);
 		}
 
 		this.config.returningFields = fields;
-		this.config.returning = orderSelectedFields<GoogleSQLColumn>(fields);
+		this.config.returning = orderSelectedFields<GoogleSqlColumn>(fields);
+		return this as any;
+	}
+
+	/**
+	 * Adds `with action` to the `then return` clause.
+	 *
+	 * This adds a string column called `ACTION` to the result row set. Each value in this column
+	 * represents the type of action that was applied during statement execution (INSERT, DELETE, UPDATE).
+	 * The ACTION column is appended as the last output column.
+	 *
+	 * Must be used together with `.returning()`.
+	 *
+	 * @example
+	 * ```ts
+	 * const result = await db.delete(cars)
+	 *   .returning()
+	 *   .withAction();
+	 * ```
+	 */
+	withAction(): GoogleSqlDeleteWithout<this, TDynamic, 'withAction'> {
+		this.config.withAction = true;
 		return this as any;
 	}
 
@@ -316,7 +336,7 @@ export class GoogleSQLUpdateBase<
 	}
 
 	/** @internal */
-	_prepare(name?: string, generateName = false): GoogleSQLUpdatePrepare<this> {
+	_prepare(name?: string, generateName = false): GoogleSqlUpdatePrepare<this> {
 		const query = this.dialect.sqlToQuery(this.getSQL());
 		const preparedQuery = this.session.prepareQuery<
 			PreparedQueryConfig & { execute: TReturning[] }
@@ -329,7 +349,7 @@ export class GoogleSQLUpdateBase<
 		return preparedQuery;
 	}
 
-	prepare(name?: string): GoogleSQLUpdatePrepare<this> {
+	prepare(name?: string): GoogleSqlUpdatePrepare<this> {
 		return this._prepare(name, true);
 	}
 
@@ -353,7 +373,7 @@ export class GoogleSQLUpdateBase<
 		) as this['_']['selectedFields'];
 	}
 
-	$dynamic(): GoogleSQLUpdateDynamic<this> {
+	$dynamic(): GoogleSqlUpdateDynamic<this> {
 		return this as any;
 	}
 }

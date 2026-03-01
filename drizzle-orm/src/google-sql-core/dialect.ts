@@ -7,16 +7,16 @@ import {
 	mapColumnsInSQLToAlias,
 } from '~/alias.ts';
 import { CasingCache } from '~/casing.ts';
-import { GoogleSQLColumn } from '~/google-sql-core/columns/index.ts';
+import { GoogleSqlColumn } from '~/google-sql-core/columns/index.ts';
 import type {
-	AnyGoogleSQLSelectQueryBuilder,
-	GoogleSQLDeleteConfig,
-	GoogleSQLInsertConfig,
-	GoogleSQLSelectJoinConfig,
-	GoogleSQLUpdateConfig,
+	AnyGoogleSqlSelectQueryBuilder,
+	GoogleSqlDeleteConfig,
+	GoogleSqlInsertConfig,
+	GoogleSqlSelectJoinConfig,
+	GoogleSqlUpdateConfig,
 } from '~/google-sql-core/query-builders/index.ts';
-import type { GoogleSQLSelectConfig, SelectedFieldsOrdered } from '~/google-sql-core/query-builders/select.types.ts';
-import { GoogleSQLTable } from '~/google-sql-core/table.ts';
+import type { GoogleSqlSelectConfig, SelectedFieldsOrdered } from '~/google-sql-core/query-builders/select.types.ts';
+import { GoogleSqlTable } from '~/google-sql-core/table.ts';
 import { Column } from '~/column.ts';
 import { entityKind, is } from '~/entity.ts';
 import { DrizzleError } from '~/errors.ts';
@@ -28,26 +28,26 @@ import { Subquery } from '~/subquery.ts';
 import { getTableName, getTableUniqueName, Table } from '~/table.ts';
 import { type Casing, orderSelectedFields, type UpdateSet } from '~/utils.ts';
 import { ViewBaseConfig } from '~/view-common.ts';
-import type { GoogleSQLSession } from './session.ts';
-import { GoogleSQLViewBase } from './view-base.ts';
+import type { GoogleSqlSession } from './session.ts';
+import { GoogleSqlViewBase } from './view-base.ts';
 
-export interface GoogleSQLDialectConfig {
+export interface GoogleSqlDialectConfig {
 	casing?: Casing;
 }
 
-export class GoogleSQLDialect {
-	static readonly [entityKind]: string = 'GoogleSQLDialect';
+export class GoogleSqlDialect {
+	static readonly [entityKind]: string = 'GoogleSqlDialect';
 
 	/** @internal */
 	readonly casing: CasingCache;
 
-	constructor(config?: GoogleSQLDialectConfig) {
+	constructor(config?: GoogleSqlDialectConfig) {
 		this.casing = new CasingCache(config?.casing);
 	}
 
 	async migrate(
 		migrations: MigrationMeta[],
-		session: GoogleSQLSession,
+		session: GoogleSqlSession,
 		config: string | MigrationConfig,
 	): Promise<void | MigratorInitFailResponse> {
 		const migrationsTable = typeof config === 'string'
@@ -133,20 +133,15 @@ export class GoogleSQLDialect {
 		return sql.join(withSqlChunks);
 	}
 
-	buildDeleteQuery({ table, where, returning, withList }: GoogleSQLDeleteConfig): SQL {
-		const withSql = this.buildWithCTE(withList);
-
-		const returningSql = returning
-			? sql` then return ${this.buildSelection(returning, { isSingleTable: true })}`
-			: undefined;
+	buildDeleteQuery({ table, where, returning, withAction }: GoogleSqlDeleteConfig): SQL {
+		const returningSql = this.buildReturnClause(returning, { withAction });
 
 		const whereSql = where ? sql` where ${where}` : undefined;
 
-		// todo: Investigate whether with clauses work ...
-		return sql`${withSql}delete from ${table}${whereSql}${returningSql}`;
+		return sql`delete from ${table}${whereSql}${returningSql}`;
 	}
 
-	buildUpdateSet(table: GoogleSQLTable, set: UpdateSet): SQL {
+	buildUpdateSet(table: GoogleSqlTable, set: UpdateSet): SQL {
 		const tableColumns = table[Table.Symbol.Columns];
 
 		const columnNames = Object.keys(tableColumns).filter((colName) =>
@@ -168,13 +163,10 @@ export class GoogleSQLDialect {
 		}));
 	}
 
-	// todo: Investigate from and joins support in update queries
-	buildUpdateQuery({ table, set, where, returning, withList }: GoogleSQLUpdateConfig): SQL {
-		const withSql = this.buildWithCTE(withList);
-
-		const tableName = table[GoogleSQLTable.Symbol.Name];
-		const tableSchema = table[GoogleSQLTable.Symbol.Schema];
-		const origTableName = table[GoogleSQLTable.Symbol.OriginalName];
+	buildUpdateQuery({ table, set, where, returning, withAction }: GoogleSqlUpdateConfig): SQL {
+		const tableName = table[GoogleSqlTable.Symbol.Name];
+		const tableSchema = table[GoogleSqlTable.Symbol.Schema];
+		const origTableName = table[GoogleSqlTable.Symbol.OriginalName];
 		const alias = tableName === origTableName ? undefined : tableName;
 		const tableSql = sql`${tableSchema ? sql`${sql.identifier(tableSchema)}.` : undefined}${
 			sql.identifier(origTableName)
@@ -184,12 +176,9 @@ export class GoogleSQLDialect {
 
 		const whereSql = where ? sql` where ${where}` : undefined;
 
-		const returningSql = returning
-			? sql` then return ${this.buildSelection(returning, { isSingleTable: true })}`
-			: undefined;
+		const returningSql = this.buildReturnClause(returning, { withAction });
 
-		// todo: Investigate whether with clauses work ...
-		return sql`${withSql}update ${tableSql} set ${setSql}${whereSql}${returningSql}`;
+		return sql`update ${tableSql} set ${setSql}${whereSql}${returningSql}`;
 	}
 
 	/**
@@ -222,7 +211,7 @@ export class GoogleSQLDialect {
 					if (isSingleTable) {
 						const newSql = new SQL(
 							query.queryChunks.map((c) => {
-								if (is(c, GoogleSQLColumn)) {
+								if (is(c, GoogleSqlColumn)) {
 									return sql.identifier(this.casing.getColumnCasing(c));
 								}
 								return c;
@@ -276,7 +265,7 @@ export class GoogleSQLDialect {
 		return sql.join(chunks);
 	}
 
-	private buildJoins(joins: GoogleSQLSelectJoinConfig[] | undefined): SQL | undefined {
+	private buildJoins(joins: GoogleSqlSelectJoinConfig[] | undefined): SQL | undefined {
 		if (!joins || joins.length === 0) {
 			return undefined;
 		}
@@ -290,10 +279,10 @@ export class GoogleSQLDialect {
 			const table = joinMeta.table;
 			const onSql = joinMeta.on ? sql` on ${joinMeta.on}` : undefined;
 
-			if (is(table, GoogleSQLTable)) {
-				const tableName = table[GoogleSQLTable.Symbol.Name];
-				const tableSchema = table[GoogleSQLTable.Symbol.Schema];
-				const origTableName = table[GoogleSQLTable.Symbol.OriginalName];
+			if (is(table, GoogleSqlTable)) {
+				const tableName = table[GoogleSqlTable.Symbol.Name];
+				const tableSchema = table[GoogleSqlTable.Symbol.Schema];
+				const origTableName = table[GoogleSqlTable.Symbol.OriginalName];
 				const alias = tableName === origTableName ? undefined : joinMeta.alias;
 				joinsArray.push(
 					sql`${sql.raw(joinMeta.joinType)} join ${
@@ -324,8 +313,8 @@ export class GoogleSQLDialect {
 	}
 
 	private buildFromTable(
-		table: SQL | Subquery | GoogleSQLViewBase | GoogleSQLTable | undefined,
-	): SQL | Subquery | GoogleSQLViewBase | GoogleSQLTable | undefined {
+		table: SQL | Subquery | GoogleSqlViewBase | GoogleSqlTable | undefined,
+	): SQL | Subquery | GoogleSqlViewBase | GoogleSqlTable | undefined {
 		if (is(table, Table) && table[Table.Symbol.IsAlias]) {
 			let fullName = sql`${sql.identifier(table[Table.Symbol.OriginalName])}`;
 			if (table[Table.Symbol.Schema]) {
@@ -345,6 +334,14 @@ export class GoogleSQLDialect {
 		return table;
 	}
 
+	private buildReturnClause(returning: SelectedFieldsOrdered | undefined, {withAction = false}: {withAction?: boolean | undefined} = {}): SQL {
+		if (!returning) {
+			return sql.empty();
+		}
+		const withActionSql = withAction ? sql` with action` : sql.empty();
+		return sql` then return${withActionSql} ${this.buildSelection(returning, { isSingleTable: true })}`;
+	}
+
 	buildSelectQuery(
 		{
 			withList,
@@ -361,16 +358,16 @@ export class GoogleSQLDialect {
 			offset,
 			distinct,
 			setOperators,
-		}: GoogleSQLSelectConfig,
+		}: GoogleSqlSelectConfig,
 	): SQL {
-		const fieldsList = fieldsFlat ?? orderSelectedFields<GoogleSQLColumn>(fields);
+		const fieldsList = fieldsFlat ?? orderSelectedFields<GoogleSqlColumn>(fields);
 		for (const f of fieldsList) {
 			if (
 				is(f.field, Column)
 				&& getTableName(f.field.table)
 					!== (is(table, Subquery)
 						? table._.alias
-						: is(table, GoogleSQLViewBase)
+						: is(table, GoogleSqlViewBase)
 						? table[ViewBaseConfig].name
 						: is(table, SQL)
 						? undefined
@@ -429,6 +426,9 @@ export class GoogleSQLDialect {
 			lockingClauseSql.append(sql` for update`);
 		}
 
+		// todo: Add support for table hints
+		// todo: Add support for table samples
+		// todo: Add support for correlated (lateral) joins
 		const finalQuery =
 			sql`${withSql}select${distinctSql} ${selection} from ${tableSql}${joinsSql}${whereSql}${groupBySql}${havingSql}${orderBySql}${limitSql}${offsetSql}${lockingClauseSql}`;
 
@@ -439,7 +439,7 @@ export class GoogleSQLDialect {
 		return finalQuery;
 	}
 
-	buildSetOperations(leftSelect: SQL, setOperators: GoogleSQLSelectConfig['setOperators']): SQL {
+	buildSetOperations(leftSelect: SQL, setOperators: GoogleSqlSelectConfig['setOperators']): SQL {
 		const [setOperator, ...rest] = setOperators;
 
 		if (!setOperator) {
@@ -460,7 +460,7 @@ export class GoogleSQLDialect {
 	buildSetOperationQuery({
 		leftSelect,
 		setOperator: { type, isAll, rightSelect, limit, orderBy, offset },
-	}: { leftSelect: SQL; setOperator: GoogleSQLSelectConfig['setOperators'][number] }): SQL {
+	}: { leftSelect: SQL; setOperator: GoogleSqlSelectConfig['setOperators'][number] }): SQL {
 		const leftChunk = sql`(${leftSelect.getSQL()}) `;
 		const rightChunk = sql`(${rightSelect.getSQL()})`;
 
@@ -471,13 +471,13 @@ export class GoogleSQLDialect {
 			// The next bit is necessary because the sql operator replaces ${table.column} with `table`.`column`
 			// which is invalid Sql syntax, Table from one of the SELECTs cannot be used in global ORDER clause
 			for (const singleOrderBy of orderBy) {
-				if (is(singleOrderBy, GoogleSQLColumn)) {
+				if (is(singleOrderBy, GoogleSqlColumn)) {
 					orderByValues.push(sql.identifier(singleOrderBy.name));
 				} else if (is(singleOrderBy, SQL)) {
 					for (let i = 0; i < singleOrderBy.queryChunks.length; i++) {
 						const chunk = singleOrderBy.queryChunks[i];
 
-						if (is(chunk, GoogleSQLColumn)) {
+						if (is(chunk, GoogleSqlColumn)) {
 							singleOrderBy.queryChunks[i] = sql.identifier(chunk.name);
 						}
 					}
@@ -503,14 +503,12 @@ export class GoogleSQLDialect {
 	}
 
 	buildInsertQuery(
-		{ table, values: valuesOrSelect, returning, withList, select }: GoogleSQLInsertConfig,
+		{ table, values: valuesOrSelect, returning, withAction, insertMode, select }: GoogleSqlInsertConfig,
 	): SQL {
-		// todo: Implement insertMode
-		// todo: Implement withAction
 		const valuesSqlList: ((SQLChunk | SQL)[] | SQL)[] = [];
-		const columns: Record<string, GoogleSQLColumn> = table[Table.Symbol.Columns];
+		const columns: Record<string, GoogleSqlColumn> = table[Table.Symbol.Columns];
 
-		const colEntries: [string, GoogleSQLColumn][] = Object.entries(columns).filter(([_, col]) =>
+		const colEntries: [string, GoogleSqlColumn][] = Object.entries(columns).filter(([_, col]) =>
 			!col.shouldDisableInsert()
 		);
 
@@ -519,7 +517,7 @@ export class GoogleSQLDialect {
 		);
 
 		if (select) {
-			const select = valuesOrSelect as AnyGoogleSQLSelectQueryBuilder | SQL;
+			const select = valuesOrSelect as AnyGoogleSqlSelectQueryBuilder | SQL;
 
 			if (is(select, SQL)) {
 				valuesSqlList.push(select);
@@ -560,16 +558,17 @@ export class GoogleSQLDialect {
 			}
 		}
 
-		const withSql = this.buildWithCTE(withList);
+		const insertModeSql = insertMode === 'or_ignore'
+			? sql` or ignore`
+			: insertMode === 'or_update'
+				? sql` or update`
+				: sql.empty();
 
 		const valuesSql = sql.join(valuesSqlList);
 
-		const returningSql = returning
-			? sql` then return ${this.buildSelection(returning, { isSingleTable: true })}`
-			: undefined;
+		const returningSql = this.buildReturnClause(returning, { withAction });
 
-		// todo: Investigate whether with clauses work ...
-		return sql`${withSql}insert into ${table} ${insertOrder} ${valuesSql}${returningSql}`;
+		return sql`insert${insertModeSql} into ${table} ${insertOrder} ${valuesSql}${returningSql}`;
 	}
 
 	sqlToQuery(sql: SQL, invokeSource?: 'indexes' | undefined): QueryWithTypings {
@@ -581,536 +580,6 @@ export class GoogleSQLDialect {
 			invokeSource,
 		});
 	}
-
-	// buildRelationalQueryWithPK({
-	// 	fullSchema,
-	// 	schema,
-	// 	tableNamesMap,
-	// 	table,
-	// 	tableConfig,
-	// 	queryConfig: config,
-	// 	tableAlias,
-	// 	isRoot = false,
-	// 	joinOn,
-	// }: {
-	// 	fullSchema: Record<string, unknown>;
-	// 	schema: TablesRelationalConfig;
-	// 	tableNamesMap: Record<string, string>;
-	// 	table: GoogleSQLTable;
-	// 	tableConfig: TableRelationalConfig;
-	// 	queryConfig: true | DBQueryConfig<'many', true>;
-	// 	tableAlias: string;
-	// 	isRoot?: boolean;
-	// 	joinOn?: SQL;
-	// }): BuildRelationalQueryResult<GoogleSQLTable, GoogleSQLColumn> {
-	// 	// For { "<relation>": true }, return a table with selection of all columns
-	// 	if (config === true) {
-	// 		const selectionEntries = Object.entries(tableConfig.columns);
-	// 		const selection: BuildRelationalQueryResult<GoogleSQLTable, GoogleSQLColumn>['selection'] = selectionEntries.map((
-	// 			[key, value],
-	// 		) => ({
-	// 			dbKey: value.name,
-	// 			tsKey: key,
-	// 			field: value as GoogleSQLColumn,
-	// 			relationTableTsKey: undefined,
-	// 			isJson: false,
-	// 			selection: [],
-	// 		}));
-
-	// 		return {
-	// 			tableTsKey: tableConfig.tsName,
-	// 			sql: table,
-	// 			selection,
-	// 		};
-	// 	}
-
-	// 	// let selection: BuildRelationalQueryResult<GoogleSQLTable, GoogleSQLColumn>['selection'] = [];
-	// 	// let selectionForBuild = selection;
-
-	// 	const aliasedColumns = Object.fromEntries(
-	// 		Object.entries(tableConfig.columns).map(([key, value]) => [key, aliasedTableColumn(value, tableAlias)]),
-	// 	);
-
-	// 	const aliasedRelations = Object.fromEntries(
-	// 		Object.entries(tableConfig.relations).map(([key, value]) => [key, aliasedRelation(value, tableAlias)]),
-	// 	);
-
-	// 	const aliasedFields = Object.assign({}, aliasedColumns, aliasedRelations);
-
-	// 	let where, hasUserDefinedWhere;
-	// 	if (config.where) {
-	// 		const whereSql = typeof config.where === 'function' ? config.where(aliasedFields, operators) : config.where;
-	// 		where = whereSql && mapColumnsInSQLToAlias(whereSql, tableAlias);
-	// 		hasUserDefinedWhere = !!where;
-	// 	}
-	// 	where = and(joinOn, where);
-
-	// 	// const fieldsSelection: { tsKey: string; value: GoogleSQLColumn | SQL.Aliased; isExtra?: boolean }[] = [];
-	// 	let joins: Join[] = [];
-	// 	let selectedColumns: string[] = [];
-
-	// 	// Figure out which columns to select
-	// 	if (config.columns) {
-	// 		let isIncludeMode = false;
-
-	// 		for (const [field, value] of Object.entries(config.columns)) {
-	// 			if (value === undefined) {
-	// 				continue;
-	// 			}
-
-	// 			if (field in tableConfig.columns) {
-	// 				if (!isIncludeMode && value === true) {
-	// 					isIncludeMode = true;
-	// 				}
-	// 				selectedColumns.push(field);
-	// 			}
-	// 		}
-
-	// 		if (selectedColumns.length > 0) {
-	// 			selectedColumns = isIncludeMode
-	// 				? selectedColumns.filter((c) => config.columns?.[c] === true)
-	// 				: Object.keys(tableConfig.columns).filter((key) => !selectedColumns.includes(key));
-	// 		}
-	// 	} else {
-	// 		// Select all columns if selection is not specified
-	// 		selectedColumns = Object.keys(tableConfig.columns);
-	// 	}
-
-	// 	// for (const field of selectedColumns) {
-	// 	// 	const column = tableConfig.columns[field]! as GoogleSQLColumn;
-	// 	// 	fieldsSelection.push({ tsKey: field, value: column });
-	// 	// }
-
-	// 	let initiallySelectedRelations: {
-	// 		tsKey: string;
-	// 		queryConfig: true | DBQueryConfig<'many', false>;
-	// 		relation: Relation;
-	// 	}[] = [];
-
-	// 	// let selectedRelations: BuildRelationalQueryResult<GoogleSQLTable, GoogleSQLColumn>['selection'] = [];
-
-	// 	// Figure out which relations to select
-	// 	if (config.with) {
-	// 		initiallySelectedRelations = Object.entries(config.with)
-	// 			.filter((entry): entry is [typeof entry[0], NonNullable<typeof entry[1]>] => !!entry[1])
-	// 			.map(([tsKey, queryConfig]) => ({ tsKey, queryConfig, relation: tableConfig.relations[tsKey]! }));
-	// 	}
-
-	// 	const manyRelations = initiallySelectedRelations.filter((r) =>
-	// 		is(r.relation, Many)
-	// 		&& (schema[tableNamesMap[r.relation.referencedTable[Table.Symbol.Name]]!]?.primaryKey.length ?? 0) > 0
-	// 	);
-	// 	// If this is the last Many relation (or there are no Many relations), we are on the innermost subquery level
-	// 	const isInnermostQuery = manyRelations.length < 2;
-
-	// 	const selectedExtras: {
-	// 		tsKey: string;
-	// 		value: SQL.Aliased;
-	// 	}[] = [];
-
-	// 	// Figure out which extras to select
-	// 	if (isInnermostQuery && config.extras) {
-	// 		const extras = typeof config.extras === 'function'
-	// 			? config.extras(aliasedFields, { sql })
-	// 			: config.extras;
-	// 		for (const [tsKey, value] of Object.entries(extras)) {
-	// 			selectedExtras.push({
-	// 				tsKey,
-	// 				value: mapColumnsInAliasedSQLToAlias(value, tableAlias),
-	// 			});
-	// 		}
-	// 	}
-
-	// 	// Transform `fieldsSelection` into `selection`
-	// 	// `fieldsSelection` shouldn't be used after this point
-	// 	// for (const { tsKey, value, isExtra } of fieldsSelection) {
-	// 	// 	selection.push({
-	// 	// 		dbKey: is(value, SQL.Aliased) ? value.fieldAlias : tableConfig.columns[tsKey]!.name,
-	// 	// 		tsKey,
-	// 	// 		field: is(value, Column) ? aliasedTableColumn(value, tableAlias) : value,
-	// 	// 		relationTableTsKey: undefined,
-	// 	// 		isJson: false,
-	// 	// 		isExtra,
-	// 	// 		selection: [],
-	// 	// 	});
-	// 	// }
-
-	// 	let orderByOrig = typeof config.orderBy === 'function'
-	// 		? config.orderBy(aliasedFields, orderByOperators)
-	// 		: config.orderBy ?? [];
-	// 	if (!Array.isArray(orderByOrig)) {
-	// 		orderByOrig = [orderByOrig];
-	// 	}
-	// 	const orderBy = orderByOrig.map((orderByValue) => {
-	// 		if (is(orderByValue, Column)) {
-	// 			return aliasedTableColumn(orderByValue, tableAlias) as GoogleSQLColumn;
-	// 		}
-	// 		return mapColumnsInSQLToAlias(orderByValue, tableAlias);
-	// 	});
-
-	// 	const limit = isInnermostQuery ? config.limit : undefined;
-	// 	const offset = isInnermostQuery ? config.offset : undefined;
-
-	// 	// For non-root queries without additional config except columns, return a table with selection
-	// 	if (
-	// 		!isRoot
-	// 		&& initiallySelectedRelations.length === 0
-	// 		&& selectedExtras.length === 0
-	// 		&& !where
-	// 		&& orderBy.length === 0
-	// 		&& limit === undefined
-	// 		&& offset === undefined
-	// 	) {
-	// 		return {
-	// 			tableTsKey: tableConfig.tsName,
-	// 			sql: table,
-	// 			selection: selectedColumns.map((key) => ({
-	// 				dbKey: tableConfig.columns[key]!.name,
-	// 				tsKey: key,
-	// 				field: tableConfig.columns[key] as GoogleSQLColumn,
-	// 				relationTableTsKey: undefined,
-	// 				isJson: false,
-	// 				selection: [],
-	// 			})),
-	// 		};
-	// 	}
-
-	// 	const selectedRelationsWithoutPK:
-
-	// 	// Process all relations without primary keys, because they need to be joined differently and will all be on the same query level
-	// 	for (
-	// 		const {
-	// 			tsKey: selectedRelationTsKey,
-	// 			queryConfig: selectedRelationConfigValue,
-	// 			relation,
-	// 		} of initiallySelectedRelations
-	// 	) {
-	// 		const normalizedRelation = normalizeRelation(schema, tableNamesMap, relation);
-	// 		const relationTableName = relation.referencedTable[Table.Symbol.Name];
-	// 		const relationTableTsName = tableNamesMap[relationTableName]!;
-	// 		const relationTable = schema[relationTableTsName]!;
-
-	// 		if (relationTable.primaryKey.length > 0) {
-	// 			continue;
-	// 		}
-
-	// 		const relationTableAlias = `${tableAlias}_${selectedRelationTsKey}`;
-	// 		const joinOn = and(
-	// 			...normalizedRelation.fields.map((field, i) =>
-	// 				eq(
-	// 					aliasedTableColumn(normalizedRelation.references[i]!, relationTableAlias),
-	// 					aliasedTableColumn(field, tableAlias),
-	// 				)
-	// 			),
-	// 		);
-	// 		const builtRelation = this.buildRelationalQueryWithoutPK({
-	// 			fullSchema,
-	// 			schema,
-	// 			tableNamesMap,
-	// 			table: fullSchema[relationTableTsName] as GoogleSQLTable,
-	// 			tableConfig: schema[relationTableTsName]!,
-	// 			queryConfig: selectedRelationConfigValue,
-	// 			tableAlias: relationTableAlias,
-	// 			joinOn,
-	// 			nestedQueryRelation: relation,
-	// 		});
-	// 		const field = sql`${sql.identifier(relationTableAlias)}.${sql.identifier('data')}`.as(selectedRelationTsKey);
-	// 		joins.push({
-	// 			on: sql`true`,
-	// 			table: new Subquery(builtRelation.sql as SQL, {}, relationTableAlias),
-	// 			alias: relationTableAlias,
-	// 			joinType: 'left',
-	// 			lateral: true,
-	// 		});
-	// 		selectedRelations.push({
-	// 			dbKey: selectedRelationTsKey,
-	// 			tsKey: selectedRelationTsKey,
-	// 			field,
-	// 			relationTableTsKey: relationTableTsName,
-	// 			isJson: true,
-	// 			selection: builtRelation.selection,
-	// 		});
-	// 	}
-
-	// 	const oneRelations = initiallySelectedRelations.filter((r): r is typeof r & { relation: One } =>
-	// 		is(r.relation, One)
-	// 	);
-
-	// 	// Process all One relations with PKs, because they can all be joined on the same level
-	// 	for (
-	// 		const {
-	// 			tsKey: selectedRelationTsKey,
-	// 			queryConfig: selectedRelationConfigValue,
-	// 			relation,
-	// 		} of oneRelations
-	// 	) {
-	// 		const normalizedRelation = normalizeRelation(schema, tableNamesMap, relation);
-	// 		const relationTableName = relation.referencedTable[Table.Symbol.Name];
-	// 		const relationTableTsName = tableNamesMap[relationTableName]!;
-	// 		const relationTableAlias = `${tableAlias}_${selectedRelationTsKey}`;
-	// 		const relationTable = schema[relationTableTsName]!;
-
-	// 		if (relationTable.primaryKey.length === 0) {
-	// 			continue;
-	// 		}
-
-	// 		const joinOn = and(
-	// 			...normalizedRelation.fields.map((field, i) =>
-	// 				eq(
-	// 					aliasedTableColumn(normalizedRelation.references[i]!, relationTableAlias),
-	// 					aliasedTableColumn(field, tableAlias),
-	// 				)
-	// 			),
-	// 		);
-	// 		const builtRelation = this.buildRelationalQueryWithPK({
-	// 			fullSchema,
-	// 			schema,
-	// 			tableNamesMap,
-	// 			table: fullSchema[relationTableTsName] as GoogleSQLTable,
-	// 			tableConfig: schema[relationTableTsName]!,
-	// 			queryConfig: selectedRelationConfigValue,
-	// 			tableAlias: relationTableAlias,
-	// 			joinOn,
-	// 		});
-	// 		const field = sql`case when ${sql.identifier(relationTableAlias)} is null then null else json_build_array(${
-	// 			sql.join(
-	// 				builtRelation.selection.map(({ field }) =>
-	// 					is(field, SQL.Aliased)
-	// 						? sql`${sql.identifier(relationTableAlias)}.${sql.identifier(field.fieldAlias)}`
-	// 						: is(field, Column)
-	// 						? aliasedTableColumn(field, relationTableAlias)
-	// 						: field
-	// 				),
-	// 				sql`, `,
-	// 			)
-	// 		}) end`.as(selectedRelationTsKey);
-	// 		const isLateralJoin = is(builtRelation.sql, SQL);
-	// 		joins.push({
-	// 			on: isLateralJoin ? sql`true` : joinOn,
-	// 			table: is(builtRelation.sql, SQL)
-	// 				? new Subquery(builtRelation.sql, {}, relationTableAlias)
-	// 				: aliasedTable(builtRelation.sql, relationTableAlias),
-	// 			alias: relationTableAlias,
-	// 			joinType: 'left',
-	// 			lateral: is(builtRelation.sql, SQL),
-	// 		});
-	// 		selectedRelations.push({
-	// 			dbKey: selectedRelationTsKey,
-	// 			tsKey: selectedRelationTsKey,
-	// 			field,
-	// 			relationTableTsKey: relationTableTsName,
-	// 			isJson: true,
-	// 			selection: builtRelation.selection,
-	// 		});
-	// 	}
-
-	// 	let distinct: GoogleSQLSelectConfig['distinct'];
-	// 	let tableFrom: GoogleSQLTable | Subquery = table;
-
-	// 	// Process first Many relation - each one requires a nested subquery
-	// 	const manyRelation = manyRelations[0];
-	// 	if (manyRelation) {
-	// 		const {
-	// 			tsKey: selectedRelationTsKey,
-	// 			queryConfig: selectedRelationQueryConfig,
-	// 			relation,
-	// 		} = manyRelation;
-
-	// 		distinct = {
-	// 			on: tableConfig.primaryKey.map((c) => aliasedTableColumn(c as GoogleSQLColumn, tableAlias)),
-	// 		};
-
-	// 		const normalizedRelation = normalizeRelation(schema, tableNamesMap, relation);
-	// 		const relationTableName = relation.referencedTable[Table.Symbol.Name];
-	// 		const relationTableTsName = tableNamesMap[relationTableName]!;
-	// 		const relationTableAlias = `${tableAlias}_${selectedRelationTsKey}`;
-	// 		const joinOn = and(
-	// 			...normalizedRelation.fields.map((field, i) =>
-	// 				eq(
-	// 					aliasedTableColumn(normalizedRelation.references[i]!, relationTableAlias),
-	// 					aliasedTableColumn(field, tableAlias),
-	// 				)
-	// 			),
-	// 		);
-
-	// 		const builtRelationJoin = this.buildRelationalQueryWithPK({
-	// 			fullSchema,
-	// 			schema,
-	// 			tableNamesMap,
-	// 			table: fullSchema[relationTableTsName] as GoogleSQLTable,
-	// 			tableConfig: schema[relationTableTsName]!,
-	// 			queryConfig: selectedRelationQueryConfig,
-	// 			tableAlias: relationTableAlias,
-	// 			joinOn,
-	// 		});
-
-	// 		const builtRelationSelectionField = sql`case when ${
-	// 			sql.identifier(relationTableAlias)
-	// 		} is null then '[]' else json_agg(json_build_array(${
-	// 			sql.join(
-	// 				builtRelationJoin.selection.map(({ field }) =>
-	// 					is(field, SQL.Aliased)
-	// 						? sql`${sql.identifier(relationTableAlias)}.${sql.identifier(field.fieldAlias)}`
-	// 						: is(field, Column)
-	// 						? aliasedTableColumn(field, relationTableAlias)
-	// 						: field
-	// 				),
-	// 				sql`, `,
-	// 			)
-	// 		})) over (partition by ${sql.join(distinct.on, sql`, `)}) end`.as(selectedRelationTsKey);
-	// 		const isLateralJoin = is(builtRelationJoin.sql, SQL);
-	// 		joins.push({
-	// 			on: isLateralJoin ? sql`true` : joinOn,
-	// 			table: isLateralJoin
-	// 				? new Subquery(builtRelationJoin.sql as SQL, {}, relationTableAlias)
-	// 				: aliasedTable(builtRelationJoin.sql as GoogleSQLTable, relationTableAlias),
-	// 			alias: relationTableAlias,
-	// 			joinType: 'left',
-	// 			lateral: isLateralJoin,
-	// 		});
-
-	// 		// Build the "from" subquery with the remaining Many relations
-	// 		const builtTableFrom = this.buildRelationalQueryWithPK({
-	// 			fullSchema,
-	// 			schema,
-	// 			tableNamesMap,
-	// 			table,
-	// 			tableConfig,
-	// 			queryConfig: {
-	// 				...config,
-	// 				where: undefined,
-	// 				orderBy: undefined,
-	// 				limit: undefined,
-	// 				offset: undefined,
-	// 				with: manyRelations.slice(1).reduce<NonNullable<typeof config['with']>>(
-	// 					(result, { tsKey, queryConfig: configValue }) => {
-	// 						result[tsKey] = configValue;
-	// 						return result;
-	// 					},
-	// 					{},
-	// 				),
-	// 			},
-	// 			tableAlias,
-	// 		});
-
-	// 		selectedRelations.push({
-	// 			dbKey: selectedRelationTsKey,
-	// 			tsKey: selectedRelationTsKey,
-	// 			field: builtRelationSelectionField,
-	// 			relationTableTsKey: relationTableTsName,
-	// 			isJson: true,
-	// 			selection: builtRelationJoin.selection,
-	// 		});
-
-	// 		// selection = builtTableFrom.selection.map((item) =>
-	// 		// 	is(item.field, SQL.Aliased)
-	// 		// 		? { ...item, field: sql`${sql.identifier(tableAlias)}.${sql.identifier(item.field.fieldAlias)}` }
-	// 		// 		: item
-	// 		// );
-	// 		// selectionForBuild = [{
-	// 		// 	dbKey: '*',
-	// 		// 	tsKey: '*',
-	// 		// 	field: sql`${sql.identifier(tableAlias)}.*`,
-	// 		// 	selection: [],
-	// 		// 	isJson: false,
-	// 		// 	relationTableTsKey: undefined,
-	// 		// }];
-	// 		// const newSelectionItem: (typeof selection)[number] = {
-	// 		// 	dbKey: selectedRelationTsKey,
-	// 		// 	tsKey: selectedRelationTsKey,
-	// 		// 	field,
-	// 		// 	relationTableTsKey: relationTableTsName,
-	// 		// 	isJson: true,
-	// 		// 	selection: builtRelationJoin.selection,
-	// 		// };
-	// 		// selection.push(newSelectionItem);
-	// 		// selectionForBuild.push(newSelectionItem);
-
-	// 		tableFrom = is(builtTableFrom.sql, GoogleSQLTable)
-	// 			? builtTableFrom.sql
-	// 			: new Subquery(builtTableFrom.sql, {}, tableAlias);
-	// 	}
-
-	// 	if (selectedColumns.length === 0 && selectedRelations.length === 0 && selectedExtras.length === 0) {
-	// 		throw new DrizzleError(`No fields selected for table "${tableConfig.tsName}" ("${tableAlias}")`);
-	// 	}
-
-	// 	let selection: BuildRelationalQueryResult<GoogleSQLTable, GoogleSQLColumn>['selection'];
-
-	// 	function prepareSelectedColumns() {
-	// 		return selectedColumns.map((key) => ({
-	// 			dbKey: tableConfig.columns[key]!.name,
-	// 			tsKey: key,
-	// 			field: tableConfig.columns[key] as GoogleSQLColumn,
-	// 			relationTableTsKey: undefined,
-	// 			isJson: false,
-	// 			selection: [],
-	// 		}));
-	// 	}
-
-	// 	function prepareSelectedExtras() {
-	// 		return selectedExtras.map((item) => ({
-	// 			dbKey: item.value.fieldAlias,
-	// 			tsKey: item.tsKey,
-	// 			field: item.value,
-	// 			relationTableTsKey: undefined,
-	// 			isJson: false,
-	// 			selection: [],
-	// 		}));
-	// 	}
-
-	// 	if (isRoot) {
-	// 		selection = [
-	// 			...prepareSelectedColumns(),
-	// 			...prepareSelectedExtras(),
-	// 		];
-	// 	}
-
-	// 	if (hasUserDefinedWhere || orderBy.length > 0) {
-	// 		tableFrom = new Subquery(
-	// 			this.buildSelectQuery({
-	// 				table: is(tableFrom, GoogleSQLTable) ? aliasedTable(tableFrom, tableAlias) : tableFrom,
-	// 				fields: {},
-	// 				fieldsFlat: selectionForBuild.map(({ field }) => ({
-	// 					path: [],
-	// 					field: is(field, Column) ? aliasedTableColumn(field, tableAlias) : field,
-	// 				})),
-	// 				joins,
-	// 				distinct,
-	// 			}),
-	// 			{},
-	// 			tableAlias,
-	// 		);
-	// 		selectionForBuild = selection.map((item) =>
-	// 			is(item.field, SQL.Aliased)
-	// 				? { ...item, field: sql`${sql.identifier(tableAlias)}.${sql.identifier(item.field.fieldAlias)}` }
-	// 				: item
-	// 		);
-	// 		joins = [];
-	// 		distinct = undefined;
-	// 	}
-
-	// 	const result = this.buildSelectQuery({
-	// 		table: is(tableFrom, GoogleSQLTable) ? aliasedTable(tableFrom, tableAlias) : tableFrom,
-	// 		fields: {},
-	// 		fieldsFlat: selectionForBuild.map(({ field }) => ({
-	// 			path: [],
-	// 			field: is(field, Column) ? aliasedTableColumn(field, tableAlias) : field,
-	// 		})),
-	// 		where,
-	// 		limit,
-	// 		offset,
-	// 		joins,
-	// 		orderBy,
-	// 		distinct,
-	// 	});
-
-	// 	return {
-	// 		tableTsKey: tableConfig.tsName,
-	// 		sql: result,
-	// 		selection,
-	// 	};
-	// }
 
 	buildRelationalQueryWithoutPK({
 		fullSchema,
@@ -1126,16 +595,16 @@ export class GoogleSQLDialect {
 		fullSchema: Record<string, unknown>;
 		schema: V1.TablesRelationalConfig;
 		tableNamesMap: Record<string, string>;
-		table: GoogleSQLTable;
+		table: GoogleSqlTable;
 		tableConfig: V1.TableRelationalConfig;
 		queryConfig: true | V1.DBQueryConfig<'many', true>;
 		tableAlias: string;
 		nestedQueryRelation?: V1.Relation;
 		joinOn?: SQL;
-	}): V1.BuildRelationalQueryResult<GoogleSQLTable, GoogleSQLColumn> {
-		let selection: V1.BuildRelationalQueryResult<GoogleSQLTable, GoogleSQLColumn>['selection'] = [];
-		let limit, offset, orderBy: NonNullable<GoogleSQLSelectConfig['orderBy']> = [], where;
-		const joins: GoogleSQLSelectJoinConfig[] = [];
+	}): V1.BuildRelationalQueryResult<GoogleSqlTable, GoogleSqlColumn> {
+		let selection: V1.BuildRelationalQueryResult<GoogleSqlTable, GoogleSqlColumn>['selection'] = [];
+		let limit, offset, orderBy: NonNullable<GoogleSqlSelectConfig['orderBy']> = [], where;
+		const joins: GoogleSqlSelectJoinConfig[] = [];
 
 		if (config === true) {
 			const selectionEntries = Object.entries(tableConfig.columns);
@@ -1144,7 +613,7 @@ export class GoogleSQLDialect {
 			) => ({
 				dbKey: value.name,
 				tsKey: key,
-				field: aliasedTableColumn(value as GoogleSQLColumn, tableAlias),
+				field: aliasedTableColumn(value as GoogleSqlColumn, tableAlias),
 				relationTableTsKey: undefined,
 				isJson: false,
 				selection: [],
@@ -1163,7 +632,7 @@ export class GoogleSQLDialect {
 				where = whereSql && mapColumnsInSQLToAlias(whereSql, tableAlias);
 			}
 
-			const fieldsSelection: { tsKey: string; value: GoogleSQLColumn | SQL.Aliased }[] = [];
+			const fieldsSelection: { tsKey: string; value: GoogleSqlColumn | SQL.Aliased }[] = [];
 			let selectedColumns: string[] = [];
 
 			// Figure out which columns to select
@@ -1194,7 +663,7 @@ export class GoogleSQLDialect {
 			}
 
 			for (const field of selectedColumns) {
-				const column = tableConfig.columns[field]! as GoogleSQLColumn;
+				const column = tableConfig.columns[field]! as GoogleSqlColumn;
 				fieldsSelection.push({ tsKey: field, value: column });
 			}
 
@@ -1247,7 +716,7 @@ export class GoogleSQLDialect {
 			}
 			orderBy = orderByOrig.map((orderByValue) => {
 				if (is(orderByValue, Column)) {
-					return aliasedTableColumn(orderByValue, tableAlias) as GoogleSQLColumn;
+					return aliasedTableColumn(orderByValue, tableAlias) as GoogleSqlColumn;
 				}
 				return mapColumnsInSQLToAlias(orderByValue, tableAlias);
 			});
@@ -1279,7 +748,7 @@ export class GoogleSQLDialect {
 					fullSchema,
 					schema,
 					tableNamesMap,
-					table: fullSchema[relationTableTsName] as GoogleSQLTable,
+					table: fullSchema[relationTableTsName] as GoogleSqlTable,
 					tableConfig: schema[relationTableTsName]!,
 					queryConfig: is(relation, V1.One)
 						? (selectedRelationConfigValue === true
@@ -1370,7 +839,7 @@ export class GoogleSQLDialect {
 			}
 
 			result = this.buildSelectQuery({
-				table: is(result, GoogleSQLTable) ? result : new Subquery(result, {}, tableAlias),
+				table: is(result, GoogleSqlTable) ? result : new Subquery(result, {}, tableAlias),
 				fields: {},
 				fieldsFlat: nestedSelection.map(({ field }) => ({
 					path: [],

@@ -1,12 +1,12 @@
-import type { GoogleSQLDialect } from '~/google-sql-core/dialect.ts';
+import type { GoogleSqlDialect } from '~/google-sql-core/dialect.ts';
 import type {
-	GoogleSQLPreparedQuery,
-	GoogleSQLQueryResultHKT,
-	GoogleSQLQueryResultKind,
-	GoogleSQLSession,
+	GoogleSqlPreparedQuery,
+	GoogleSqlQueryResultHKT,
+	GoogleSqlQueryResultKind,
+	GoogleSqlSession,
 	PreparedQueryConfig,
 } from '~/google-sql-core/session.ts';
-import type { GoogleSQLTable, TableConfig } from '~/google-sql-core/table.ts';
+import type { GoogleSqlTable, TableConfig } from '~/google-sql-core/table.ts';
 import { entityKind, is } from '~/entity.ts';
 import type { TypedQueryBuilder } from '~/query-builders/query-builder.ts';
 import type { SelectResultFields } from '~/query-builders/select.types.ts';
@@ -20,26 +20,25 @@ import type { Subquery } from '~/subquery.ts';
 import type { InferInsertModel } from '~/table.ts';
 import { getTableName, Table, TableColumns } from '~/table.ts';
 import { tracer } from '~/tracing.ts';
-import { haveSameKeys, type NeonAuthToken, orderSelectedFields } from '~/utils.ts';
-import type { AnyGoogleSQLColumn, GoogleSQLColumn } from '../columns/common.ts';
+import { haveSameKeys, orderSelectedFields } from '~/utils.ts';
+import type { AnyGoogleSqlColumn, GoogleSqlColumn } from '../columns/common.ts';
 import { QueryBuilder } from './query-builder.ts';
 import type { SelectedFieldsFlat, SelectedFieldsOrdered } from './select.types.ts';
 
-export type GoogleSQLInsertMode = 'default' | 'or_ignore' | 'or_update';
+export type GoogleSqlInsertMode = 'default' | 'or_ignore' | 'or_update';
 
-export interface GoogleSQLInsertConfig<TTable extends GoogleSQLTable = GoogleSQLTable> {
+export interface GoogleSqlInsertConfig<TTable extends GoogleSqlTable = GoogleSqlTable> {
 	table: TTable;
-	values: Record<string, Param | SQL>[] | GoogleSQLInsertSelectQueryBuilder<TTable> | SQL;
-	withList?: Subquery[];
-	insertMode?: GoogleSQLInsertMode;
+	values: Record<string, Param | SQL>[] | GoogleSqlInsertSelectQueryBuilder<TTable> | SQL;
+	insertMode?: GoogleSqlInsertMode;
 	returningFields?: SelectedFieldsFlat;
 	returning?: SelectedFieldsOrdered;
 	withAction?: boolean;
 	select?: boolean;
 }
 
-export type GoogleSQLInsertValue<
-	TTable extends GoogleSQLTable<TableConfig>,
+export type GoogleSqlInsertValue<
+	TTable extends GoogleSqlTable<TableConfig>,
 	OverrideT extends boolean = false,
 	TModel extends Record<string, any> = InferInsertModel<TTable, { dbColumnNames: false; override: OverrideT }>,
 > =
@@ -51,33 +50,32 @@ export type GoogleSQLInsertValue<
 	}
 	& {};
 
-export type GoogleSQLInsertSelectQueryBuilder<
-	TTable extends GoogleSQLTable,
+export type GoogleSqlInsertSelectQueryBuilder<
+	TTable extends GoogleSqlTable,
 	TModel extends Record<string, any> = InferInsertModel<TTable>,
 > = TypedQueryBuilder<
-	{ [K in keyof TModel]: AnyGoogleSQLColumn | SQL | SQL.Aliased | TModel[K] }
+	{ [K in keyof TModel]: AnyGoogleSqlColumn | SQL | SQL.Aliased | TModel[K] }
 >;
 
-export class GoogleSQLInsertBuilder<
-	TTable extends GoogleSQLTable,
-	TQueryResult extends GoogleSQLQueryResultHKT,
+export class GoogleSqlInsertBuilder<
+	TTable extends GoogleSqlTable,
+	TQueryResult extends GoogleSqlQueryResultHKT,
 	OverrideT extends boolean = false,
 > {
-	static readonly [entityKind]: string = 'GoogleSQLInsertBuilder';
+	static readonly [entityKind]: string = 'GoogleSqlInsertBuilder';
 
 	constructor(
 		private table: TTable,
-		private session: GoogleSQLSession,
-		private dialect: GoogleSQLDialect,
-		private withList?: Subquery[],
-		private insertMode?: GoogleSQLInsertMode,
+		private session: GoogleSqlSession,
+		private dialect: GoogleSqlDialect,
+		private insertMode?: GoogleSqlInsertMode,
 	) {}
 
-	values(value: GoogleSQLInsertValue<TTable, OverrideT>): GoogleSQLInsertBase<TTable, TQueryResult>;
-	values(values: GoogleSQLInsertValue<TTable, OverrideT>[]): GoogleSQLInsertBase<TTable, TQueryResult>;
+	values(value: GoogleSqlInsertValue<TTable, OverrideT>): GoogleSqlInsertBase<TTable, TQueryResult>;
+	values(values: GoogleSqlInsertValue<TTable, OverrideT>[]): GoogleSqlInsertBase<TTable, TQueryResult>;
 	values(
-		values: GoogleSQLInsertValue<TTable, OverrideT> | GoogleSQLInsertValue<TTable, OverrideT>[],
-	): GoogleSQLInsertBase<TTable, TQueryResult> {
+		values: GoogleSqlInsertValue<TTable, OverrideT> | GoogleSqlInsertValue<TTable, OverrideT>[],
+	): GoogleSqlInsertBase<TTable, TQueryResult> {
 		values = Array.isArray(values) ? values : [values];
 		if (values.length === 0) {
 			throw new Error('values() must be called with at least one value');
@@ -92,30 +90,44 @@ export class GoogleSQLInsertBuilder<
 			return result;
 		});
 
-		return new GoogleSQLInsertBase(
+		return new GoogleSqlInsertBase(
 			this.table,
 			mappedValues,
 			this.session,
 			this.dialect,
-			this.withList,
 			false,
 			false,
 			this.insertMode,
 		) as any;
 	}
 
+	orIgnore(): this {
+		this.insertMode = 'or_ignore';
+		return this;
+	}
+
+	orUpdate(): this {
+		this.insertMode = 'or_update';
+		return this;
+	}
+
+	orError(): this {
+		this.insertMode = 'default';
+		return this;
+	}
+
 	select(
-		selectQuery: (qb: QueryBuilder) => GoogleSQLInsertSelectQueryBuilder<TTable>,
-	): GoogleSQLInsertBase<TTable, TQueryResult>;
-	select(selectQuery: (qb: QueryBuilder) => SQL): GoogleSQLInsertBase<TTable, TQueryResult>;
-	select(selectQuery: SQL): GoogleSQLInsertBase<TTable, TQueryResult>;
-	select(selectQuery: GoogleSQLInsertSelectQueryBuilder<TTable>): GoogleSQLInsertBase<TTable, TQueryResult>;
+		selectQuery: (qb: QueryBuilder) => GoogleSqlInsertSelectQueryBuilder<TTable>,
+	): GoogleSqlInsertBase<TTable, TQueryResult>;
+	select(selectQuery: (qb: QueryBuilder) => SQL): GoogleSqlInsertBase<TTable, TQueryResult>;
+	select(selectQuery: SQL): GoogleSqlInsertBase<TTable, TQueryResult>;
+	select(selectQuery: GoogleSqlInsertSelectQueryBuilder<TTable>): GoogleSqlInsertBase<TTable, TQueryResult>;
 	select(
 		selectQuery:
 			| SQL
-			| GoogleSQLInsertSelectQueryBuilder<TTable>
-			| ((qb: QueryBuilder) => GoogleSQLInsertSelectQueryBuilder<TTable> | SQL),
-	): GoogleSQLInsertBase<TTable, TQueryResult> {
+			| GoogleSqlInsertSelectQueryBuilder<TTable>
+			| ((qb: QueryBuilder) => GoogleSqlInsertSelectQueryBuilder<TTable> | SQL),
+	): GoogleSqlInsertBase<TTable, TQueryResult> {
 		const select = typeof selectQuery === 'function' ? selectQuery(new QueryBuilder()) : selectQuery;
 
 		if (
@@ -127,17 +139,17 @@ export class GoogleSQLInsertBuilder<
 			);
 		}
 
-		return new GoogleSQLInsertBase(this.table, select, this.session, this.dialect, this.withList, true, false, this.insertMode);
+		return new GoogleSqlInsertBase(this.table, select, this.session, this.dialect, true, false, this.insertMode);
 	}
 }
 
-export type GoogleSQLInsertWithout<
-	T extends AnyGoogleSQLInsert,
+export type GoogleSqlInsertWithout<
+	T extends AnyGoogleSqlInsert,
 	TDynamic extends boolean,
 	K extends keyof T & string,
 > = TDynamic extends true ? T
 	: Omit<
-		GoogleSQLInsertBase<
+		GoogleSqlInsertBase<
 			T['_']['table'],
 			T['_']['queryResult'],
 			T['_']['selectedFields'],
@@ -148,11 +160,11 @@ export type GoogleSQLInsertWithout<
 		T['_']['excludedMethods'] | K
 	>;
 
-export type GoogleSQLInsertReturning<
-	T extends AnyGoogleSQLInsert,
+export type GoogleSqlInsertReturning<
+	T extends AnyGoogleSqlInsert,
 	TDynamic extends boolean,
 	TSelectedFields extends SelectedFieldsFlat,
-> = GoogleSQLInsertBase<
+> = GoogleSqlInsertBase<
 	T['_']['table'],
 	T['_']['queryResult'],
 	TSelectedFields,
@@ -161,7 +173,7 @@ export type GoogleSQLInsertReturning<
 	T['_']['excludedMethods']
 >;
 
-export type GoogleSQLInsertReturningAll<T extends AnyGoogleSQLInsert, TDynamic extends boolean> = GoogleSQLInsertBase<
+export type GoogleSqlInsertReturningAll<T extends AnyGoogleSqlInsert, TDynamic extends boolean> = GoogleSqlInsertBase<
 	T['_']['table'],
 	T['_']['queryResult'],
 	T['_']['table']['_']['columns'],
@@ -170,31 +182,31 @@ export type GoogleSQLInsertReturningAll<T extends AnyGoogleSQLInsert, TDynamic e
 	T['_']['excludedMethods']
 >;
 
-export type GoogleSQLInsertPrepare<T extends AnyGoogleSQLInsert> = GoogleSQLPreparedQuery<
+export type GoogleSqlInsertPrepare<T extends AnyGoogleSqlInsert> = GoogleSqlPreparedQuery<
 	PreparedQueryConfig & {
-		execute: T['_']['returning'] extends undefined ? GoogleSQLQueryResultKind<T['_']['queryResult'], never>
+		execute: T['_']['returning'] extends undefined ? GoogleSqlQueryResultKind<T['_']['queryResult'], never>
 			: T['_']['returning'][];
 	}
 >;
 
-export type GoogleSQLInsertDynamic<T extends AnyGoogleSQLInsert> = GoogleSQLInsert<
+export type GoogleSqlInsertDynamic<T extends AnyGoogleSqlInsert> = GoogleSqlInsert<
 	T['_']['table'],
 	T['_']['queryResult'],
 	T['_']['returning']
 >;
 
-export type AnyGoogleSQLInsert = GoogleSQLInsertBase<any, any, any, any, any, any>;
+export type AnyGoogleSqlInsert = GoogleSqlInsertBase<any, any, any, any, any, any>;
 
-export type GoogleSQLInsert<
-	TTable extends GoogleSQLTable = GoogleSQLTable,
-	TQueryResult extends GoogleSQLQueryResultHKT = GoogleSQLQueryResultHKT,
+export type GoogleSqlInsert<
+	TTable extends GoogleSqlTable = GoogleSqlTable,
+	TQueryResult extends GoogleSqlQueryResultHKT = GoogleSqlQueryResultHKT,
 	TSelectedFields extends ColumnsSelection | undefined = ColumnsSelection | undefined,
 	TReturning extends Record<string, unknown> | undefined = Record<string, unknown> | undefined,
-> = GoogleSQLInsertBase<TTable, TQueryResult, TSelectedFields, TReturning, true, never>;
+> = GoogleSqlInsertBase<TTable, TQueryResult, TSelectedFields, TReturning, true, never>;
 
-export interface GoogleSQLInsertBase<
-	TTable extends GoogleSQLTable,
-	TQueryResult extends GoogleSQLQueryResultHKT,
+export interface GoogleSqlInsertBase<
+	TTable extends GoogleSqlTable,
+	TQueryResult extends GoogleSqlQueryResultHKT,
 	TSelectedFields extends ColumnsSelection | undefined = undefined,
 	TReturning extends Record<string, unknown> | undefined = undefined,
 	TDynamic extends boolean = false,
@@ -202,64 +214,63 @@ export interface GoogleSQLInsertBase<
 > extends
 	TypedQueryBuilder<
 		TSelectedFields,
-		TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[]
+		TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[]
 	>,
-	QueryPromise<TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[]>,
+	QueryPromise<TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[]>,
 	RunnableQuery<
-		TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[],
-		'google-sql'
+		TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[],
+		'googlesql'
 	>,
 	SQLWrapper
 {
 	readonly _: {
-		readonly dialect: 'google-sql';
+		readonly dialect: 'googlesql';
 		readonly table: TTable;
 		readonly queryResult: TQueryResult;
 		readonly selectedFields: TSelectedFields;
 		readonly returning: TReturning;
 		readonly dynamic: TDynamic;
 		readonly excludedMethods: TExcludedMethods;
-		readonly result: TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[];
+		readonly result: TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[];
 	};
 }
 
-export class GoogleSQLInsertBase<
-	TTable extends GoogleSQLTable,
-	TQueryResult extends GoogleSQLQueryResultHKT,
+export class GoogleSqlInsertBase<
+	TTable extends GoogleSqlTable,
+	TQueryResult extends GoogleSqlQueryResultHKT,
 	TSelectedFields extends ColumnsSelection | undefined = undefined,
 	TReturning extends Record<string, unknown> | undefined = undefined,
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	TDynamic extends boolean = false,
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	TExcludedMethods extends string = never,
-> extends QueryPromise<TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[]>
+> extends QueryPromise<TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[]>
 	implements
 		TypedQueryBuilder<
 			TSelectedFields,
-			TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[]
+			TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[]
 		>,
 		RunnableQuery<
-			TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[],
-			'google-sql'
+			TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[],
+			'googlesql'
 		>,
 		SQLWrapper
 {
-	static override readonly [entityKind]: string = 'GoogleSQLInsert';
+	static override readonly [entityKind]: string = 'GoogleSqlInsert';
 
-	private config: GoogleSQLInsertConfig<TTable>;
+	private config: GoogleSqlInsertConfig<TTable>;
 
 	constructor(
 		table: TTable,
-		values: GoogleSQLInsertConfig['values'],
-		private session: GoogleSQLSession,
-		private dialect: GoogleSQLDialect,
-		withList?: Subquery[],
+		values: GoogleSqlInsertConfig['values'],
+		private session: GoogleSqlSession,
+		private dialect: GoogleSqlDialect,
 		select?: boolean,
 		withAction?: boolean,
-		insertMode?: GoogleSQLInsertMode,
+		insertMode?: GoogleSqlInsertMode,
 	) {
 		super();
-		this.config = { table, values: values as any, withList, select, withAction, insertMode };
+		this.config = { table, values: values as any, select, withAction, insertMode };
 	}
 
 	/**
@@ -282,15 +293,15 @@ export class GoogleSQLInsertBase<
 	 *   .returning({ id: cars.id });
 	 * ```
 	 */
-	returning(): GoogleSQLInsertWithout<GoogleSQLInsertReturningAll<this, TDynamic>, TDynamic, 'returning'>;
+	returning(): GoogleSqlInsertWithout<GoogleSqlInsertReturningAll<this, TDynamic>, TDynamic, 'returning'>;
 	returning<TSelectedFields extends SelectedFieldsFlat>(
 		fields: TSelectedFields,
-	): GoogleSQLInsertWithout<GoogleSQLInsertReturning<this, TDynamic, TSelectedFields>, TDynamic, 'returning'>;
+	): GoogleSqlInsertWithout<GoogleSqlInsertReturning<this, TDynamic, TSelectedFields>, TDynamic, 'returning'>;
 	returning(
 		fields: SelectedFieldsFlat = this.config.table[Table.Symbol.Columns],
-	): GoogleSQLInsertWithout<AnyGoogleSQLInsert, TDynamic, 'returning'> {
+	): GoogleSqlInsertWithout<AnyGoogleSqlInsert, TDynamic, 'returning'> {
 		this.config.returningFields = fields;
-		this.config.returning = orderSelectedFields<GoogleSQLColumn>(fields);
+		this.config.returning = orderSelectedFields<GoogleSqlColumn>(fields);
 		return this as any;
 	}
 
@@ -311,7 +322,7 @@ export class GoogleSQLInsertBase<
 	 *   .withAction();
 	 * ```
 	 */
-	withAction(): GoogleSQLInsertWithout<this, TDynamic, 'withAction'> {
+	withAction(): GoogleSqlInsertWithout<this, TDynamic, 'withAction'> {
 		this.config.withAction = true;
 		return this as any;
 	}
@@ -327,12 +338,12 @@ export class GoogleSQLInsertBase<
 	}
 
 	/** @internal */
-	_prepare(name?: string, generateName = false): GoogleSQLInsertPrepare<this> {
+	_prepare(name?: string, generateName = false): GoogleSqlInsertPrepare<this> {
 		return tracer.startActiveSpan('drizzle.prepareQuery', () => {
 			const query = this.dialect.sqlToQuery(this.getSQL());
 			return this.session.prepareQuery<
 				PreparedQueryConfig & {
-					execute: TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[];
+					execute: TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[];
 				}
 			>(
 				query,
@@ -343,20 +354,13 @@ export class GoogleSQLInsertBase<
 		});
 	}
 
-	prepare(name?: string): GoogleSQLInsertPrepare<this> {
+	prepare(name?: string): GoogleSqlInsertPrepare<this> {
 		return this._prepare(name, true);
-	}
-
-	private authToken?: NeonAuthToken;
-	/** @internal */
-	setToken(token?: NeonAuthToken) {
-		this.authToken = token;
-		return this;
 	}
 
 	override execute: ReturnType<this['prepare']>['execute'] = (placeholderValues) => {
 		return tracer.startActiveSpan('drizzle.operation', () => {
-			return this._prepare().execute(placeholderValues, this.authToken);
+			return this._prepare().execute(placeholderValues);
 		});
 	};
 
@@ -376,7 +380,7 @@ export class GoogleSQLInsertBase<
 		) as this['_']['selectedFields'];
 	}
 
-	$dynamic(): GoogleSQLInsertDynamic<this> {
+	$dynamic(): GoogleSqlInsertDynamic<this> {
 		return this as any;
 	}
 }

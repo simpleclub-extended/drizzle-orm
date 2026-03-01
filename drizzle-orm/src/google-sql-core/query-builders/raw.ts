@@ -4,15 +4,15 @@ import type { RunnableQuery } from '~/runnable-query.ts';
 import type { PreparedQuery } from '~/session.ts';
 import type { Query, SQL, SQLWrapper } from '~/sql/sql.ts';
 
-export interface GoogleSQLRaw<TResult> extends QueryPromise<TResult>, RunnableQuery<TResult, 'google-sql'>, SQLWrapper {}
+export interface GoogleSqlRaw<TResult> extends QueryPromise<TResult>, RunnableQuery<TResult, 'googlesql'>, SQLWrapper {}
 
-export class GoogleSQLRaw<TResult> extends QueryPromise<TResult>
-	implements RunnableQuery<TResult, 'google-sql'>, SQLWrapper, PreparedQuery
+export class GoogleSqlRaw<TResult> extends QueryPromise<TResult>
+	implements RunnableQuery<TResult, 'googlesql'>, SQLWrapper, PreparedQuery
 {
-	static override readonly [entityKind]: string = 'GoogleSQLRaw';
+	static override readonly [entityKind]: string = 'GoogleSqlRaw';
 
 	declare readonly _: {
-		readonly dialect: 'google-sql';
+		readonly dialect: 'googlesql';
 		readonly result: TResult;
 	};
 

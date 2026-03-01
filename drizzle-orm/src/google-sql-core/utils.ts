@@ -1,27 +1,25 @@
 import { is } from '~/entity.ts';
 import { Table } from '~/table.ts';
 import { ViewBaseConfig } from '~/view-common.ts';
-import { GoogleSQLTable } from './table.ts';
+import { GoogleSqlTable } from './table.ts';
 import { type Check, CheckBuilder } from './checks.ts';
-import type { AnyGoogleSQLColumn } from './columns/index.ts';
+import type { AnyGoogleSqlColumn } from './columns/index.ts';
 import { type ForeignKey, ForeignKeyBuilder } from './foreign-keys.ts';
 import type { Index } from './indexes.ts';
 import { IndexBuilder } from './indexes.ts';
 import { type PrimaryKey, PrimaryKeyBuilder } from './primary-keys.ts';
-import { type UniqueConstraint, UniqueConstraintBuilder } from './unique-constraint.ts';
-import type { GoogleSQLView } from './view.ts';
+import type { GoogleSqlView } from './view.ts';
 
-export function getTableConfig<TTable extends GoogleSQLTable>(table: TTable) {
+export function getTableConfig<TTable extends GoogleSqlTable>(table: TTable) {
 	const columns = Object.values(table[Table.Symbol.Columns]);
 	const indexes: Index[] = [];
 	const checks: Check[] = [];
 	const primaryKeys: PrimaryKey[] = [];
-	const foreignKeys: ForeignKey[] = Object.values(table[GoogleSQLTable.Symbol.InlineForeignKeys]);
-	const uniqueConstraints: UniqueConstraint[] = [];
+	const foreignKeys: ForeignKey[] = Object.values(table[GoogleSqlTable.Symbol.InlineForeignKeys]);
 	const name = table[Table.Symbol.Name];
 	const schema = table[Table.Symbol.Schema];
 
-	const extraConfigBuilder = table[GoogleSQLTable.Symbol.ExtraConfigBuilder];
+	const extraConfigBuilder = table[GoogleSqlTable.Symbol.ExtraConfigBuilder];
 
 	if (extraConfigBuilder !== undefined) {
 		const extraConfig = extraConfigBuilder(table[Table.Symbol.ExtraConfigColumns]);
@@ -47,7 +45,6 @@ export function getTableConfig<TTable extends GoogleSQLTable>(table: TTable) {
 		foreignKeys,
 		checks,
 		primaryKeys,
-		uniqueConstraints,
 		name,
 		schema,
 	};
@@ -56,7 +53,7 @@ export function getTableConfig<TTable extends GoogleSQLTable>(table: TTable) {
 export function getViewConfig<
 	TName extends string = string,
 	TExisting extends boolean = boolean,
->(view: GoogleSQLView<TName, TExisting>) {
+>(view: GoogleSqlView<TName, TExisting>) {
 	return {
 		...view[ViewBaseConfig],
 	};
@@ -65,5 +62,5 @@ export function getViewConfig<
 export type ColumnsWithTable<
 	TTableName extends string,
 	TForeignTableName extends string,
-	TColumns extends AnyGoogleSQLColumn<{ tableName: TTableName }>[],
-> = { [Key in keyof TColumns]: AnyGoogleSQLColumn<{ tableName: TForeignTableName }> };
+	TColumns extends AnyGoogleSqlColumn<{ tableName: TTableName }>[],
+> = { [Key in keyof TColumns]: AnyGoogleSqlColumn<{ tableName: TForeignTableName }> };

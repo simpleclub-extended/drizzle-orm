@@ -1,18 +1,18 @@
-import type { AnyGoogleSQLTable } from '~/google-sql-core/table.ts';
+import type { AnyGoogleSqlTable } from '~/google-sql-core/table.ts';
 import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
 import { sql } from '~/sql/sql.ts';
-import { GoogleSQLColumn, GoogleSQLColumnWithArrayBuilder } from './common.ts';
+import { GoogleSqlColumn, GoogleSqlColumnWithArrayBuilder } from './common.ts';
 
-export class GoogleSQLUUIDBuilder extends GoogleSQLColumnWithArrayBuilder<{
+export class GoogleSqlUUIDBuilder extends GoogleSqlColumnWithArrayBuilder<{
 	dataType: 'string uuid';
 	data: string;
 	driverParam: string;
 }> {
-	static override readonly [entityKind]: string = 'GoogleSQLUUIDBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlUUIDBuilder';
 
 	constructor(name: string) {
-		super(name, 'string uuid', 'GoogleSQLUUID');
+		super(name, 'string uuid', 'GoogleSqlUUID');
 	}
 
 	/**
@@ -24,17 +24,17 @@ export class GoogleSQLUUIDBuilder extends GoogleSQLColumnWithArrayBuilder<{
 
 	/** @internal */
 	override build<TTableName extends string>(
-		table: AnyGoogleSQLTable<{ name: TTableName }>,
+		table: AnyGoogleSqlTable<{ name: TTableName }>,
 	) {
-		return new GoogleSQLUUID(
+		return new GoogleSqlUUID(
 			table,
 			this.config,
 		);
 	}
 }
 
-export class GoogleSQLUUID<T extends ColumnBaseConfig<'string uuid'>> extends GoogleSQLColumn<T> {
-	static override readonly [entityKind]: string = 'GoogleSQLUUID';
+export class GoogleSqlUUID<T extends ColumnBaseConfig<'string uuid'>> extends GoogleSqlColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSqlUUID';
 
 	getSQLType(): string {
 		return 'uuid';
@@ -42,5 +42,5 @@ export class GoogleSQLUUID<T extends ColumnBaseConfig<'string uuid'>> extends Go
 }
 
 export function uuid(name?: string) {
-	return new GoogleSQLUUIDBuilder(name ?? '');
+	return new GoogleSqlUUIDBuilder(name ?? '');
 }

@@ -1,30 +1,29 @@
 import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
-import type { GoogleSQLTable } from '../table.ts';
-import { GoogleSQLColumn, GoogleSQLColumnBuilder } from './common.ts';
+import type { GoogleSqlTable } from '../table.ts';
+import { GoogleSqlColumn, GoogleSqlColumnBuilder } from './common.ts';
 
-export class GoogleSQLBytesBuilder extends GoogleSQLColumnBuilder<{
+export class GoogleSqlBytesBuilder extends GoogleSqlColumnBuilder<{
 	dataType: 'object buffer';
 	data: Buffer;
 	driverParam: Buffer;
 }> {
-	static override readonly [entityKind]: string = 'GoogleSQLBytesBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlBytesBuilder';
 
 	constructor(name: string) {
-		super(name, 'object buffer', 'GoogleSQLBytes');
+		super(name, 'object buffer', 'GoogleSqlBytes');
 	}
 
 	/** @internal */
-	override build(table: GoogleSQLTable<any>) {
-		return new GoogleSQLBytes(table, this.config as any);
+	override build(table: GoogleSqlTable<any>) {
+		return new GoogleSqlBytes(table, this.config as any);
 	}
 }
 
-export class GoogleSQLBytes<T extends ColumnBaseConfig<'object buffer'>> extends GoogleSQLColumn<T> {
-	static override readonly [entityKind]: string = 'GoogleSQLBytes';
+export class GoogleSqlBytes<T extends ColumnBaseConfig<'object buffer'>> extends GoogleSqlColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSqlBytes';
 
 	override mapFromDriverValue(value: Buffer | Uint8Array | string): Buffer {
-		// todo: Check whether this is correct for Google SQL.
 		if (Buffer.isBuffer(value)) return value;
 
 		if (typeof value === 'string') {
@@ -41,6 +40,6 @@ export class GoogleSQLBytes<T extends ColumnBaseConfig<'object buffer'>> extends
 	}
 }
 
-export function bytes(name?: string): GoogleSQLBytesBuilder {
-	return new GoogleSQLBytesBuilder(name ?? '');
+export function bytes(name?: string): GoogleSqlBytesBuilder {
+	return new GoogleSqlBytesBuilder(name ?? '');
 }

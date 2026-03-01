@@ -5,13 +5,13 @@ import type { AddAliasToSelection } from '~/query-builders/select.types.ts';
 import { SelectionProxyHandler } from '~/selection-proxy.ts';
 import type { ColumnsSelection, SQL } from '~/sql/sql.ts';
 import { getTableColumns } from '~/utils.ts';
-import type { GoogleSQLColumn } from './columns/common.ts';
+import type { GoogleSqlColumn } from './columns/common.ts';
 import { QueryBuilder } from './query-builders/query-builder.ts';
-import { googleSQLTable } from './table.ts';
-import { GoogleSQLViewBase } from './view-base.ts';
+import { googleSqlTable } from './table.ts';
+import { GoogleSqlViewBase } from './view-base.ts';
 
 export class DefaultViewBuilderCore<TConfig extends { name: string; columns?: unknown }> {
-	static readonly [entityKind]: string = 'GoogleSQLDefaultViewBuilderCore';
+	static readonly [entityKind]: string = 'GoogleSqlDefaultViewBuilderCore';
 
 	declare readonly _: {
 		readonly name: TConfig['name'];
@@ -25,11 +25,11 @@ export class DefaultViewBuilderCore<TConfig extends { name: string; columns?: un
 }
 
 export class ViewBuilder<TName extends string = string> extends DefaultViewBuilderCore<{ name: TName }> {
-	static override readonly [entityKind]: string = 'GoogleSQLViewBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlViewBuilder';
 
 	as<TSelectedFields extends ColumnsSelection>(
 		qb: TypedQueryBuilder<TSelectedFields> | ((qb: QueryBuilder) => TypedQueryBuilder<TSelectedFields>),
-	): GoogleSQLViewWithSelection<TName, false, AddAliasToSelection<TSelectedFields, TName, 'google-sql'>> {
+	): GoogleSqlViewWithSelection<TName, false, AddAliasToSelection<TSelectedFields, TName, 'googlesql'>> {
 		if (typeof qb === 'function') {
 			qb = qb(new QueryBuilder());
 		}
@@ -41,7 +41,7 @@ export class ViewBuilder<TName extends string = string> extends DefaultViewBuild
 		});
 		const aliasedSelection = new Proxy(qb.getSelectedFields(), selectionProxy);
 		return new Proxy(
-			new GoogleSQLView({
+			new GoogleSqlView({
 				config: {
 					name: this.name,
 					schema: this.schema,
@@ -50,7 +50,7 @@ export class ViewBuilder<TName extends string = string> extends DefaultViewBuild
 				},
 			}),
 			selectionProxy as any,
-		) as GoogleSQLViewWithSelection<TName, false, AddAliasToSelection<TSelectedFields, TName, 'google-sql'>>;
+		) as GoogleSqlViewWithSelection<TName, false, AddAliasToSelection<TSelectedFields, TName, 'googlesql'>>;
 	}
 }
 
@@ -58,9 +58,9 @@ export class ManualViewBuilder<
 	TName extends string = string,
 	TColumns extends Record<string, ColumnBuilderBase> = Record<string, ColumnBuilderBase>,
 > extends DefaultViewBuilderCore<{ name: TName; columns: TColumns }> {
-	static override readonly [entityKind]: string = 'GoogleSQLManualViewBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlManualViewBuilder';
 
-	private columns: Record<string, GoogleSQLColumn>;
+	private columns: Record<string, GoogleSqlColumn>;
 
 	constructor(
 		name: TName,
@@ -68,12 +68,12 @@ export class ManualViewBuilder<
 		schema: string | undefined,
 	) {
 		super(name, schema);
-		this.columns = getTableColumns(googleSQLTable(name, columns));
+		this.columns = getTableColumns(googleSqlTable(name, columns));
 	}
 
-	existing(): GoogleSQLViewWithSelection<TName, true, BuildColumns<TName, TColumns, 'google-sql'>> {
+	existing(): GoogleSqlViewWithSelection<TName, true, BuildColumns<TName, TColumns, 'googlesql'>> {
 		return new Proxy(
-			new GoogleSQLView({
+			new GoogleSqlView({
 				config: {
 					name: this.name,
 					schema: this.schema,
@@ -87,12 +87,12 @@ export class ManualViewBuilder<
 				sqlAliasedBehavior: 'alias',
 				replaceOriginalName: true,
 			}),
-		) as GoogleSQLViewWithSelection<TName, true, BuildColumns<TName, TColumns, 'google-sql'>>;
+		) as GoogleSqlViewWithSelection<TName, true, BuildColumns<TName, TColumns, 'googlesql'>>;
 	}
 
-	as(query: SQL): GoogleSQLViewWithSelection<TName, false, BuildColumns<TName, TColumns, 'google-sql'>> {
+	as(query: SQL): GoogleSqlViewWithSelection<TName, false, BuildColumns<TName, TColumns, 'googlesql'>> {
 		return new Proxy(
-			new GoogleSQLView({
+			new GoogleSqlView({
 				config: {
 					name: this.name,
 					schema: this.schema,
@@ -106,16 +106,16 @@ export class ManualViewBuilder<
 				sqlAliasedBehavior: 'alias',
 				replaceOriginalName: true,
 			}),
-		) as GoogleSQLViewWithSelection<TName, false, BuildColumns<TName, TColumns, 'google-sql'>>;
+		) as GoogleSqlViewWithSelection<TName, false, BuildColumns<TName, TColumns, 'googlesql'>>;
 	}
 }
 
-export class GoogleSQLView<
+export class GoogleSqlView<
 	TName extends string = string,
 	TExisting extends boolean = boolean,
 	TSelectedFields extends ColumnsSelection = ColumnsSelection,
-> extends GoogleSQLViewBase<TName, TExisting, TSelectedFields> {
-	static override readonly [entityKind]: string = 'GoogleSQLView';
+> extends GoogleSqlViewBase<TName, TExisting, TSelectedFields> {
+	static override readonly [entityKind]: string = 'GoogleSqlView';
 
 	constructor({ config }: {
 		config: {
@@ -129,14 +129,14 @@ export class GoogleSQLView<
 	}
 }
 
-export type GoogleSQLViewWithSelection<
+export type GoogleSqlViewWithSelection<
 	TName extends string = string,
 	TExisting extends boolean = boolean,
 	TSelectedFields extends ColumnsSelection = ColumnsSelection,
-> = GoogleSQLView<TName, TExisting, TSelectedFields> & TSelectedFields;
+> = GoogleSqlView<TName, TExisting, TSelectedFields> & TSelectedFields;
 
 /** @internal */
-export function googleSQLViewWithSchema(
+export function googleSqlViewWithSchema(
 	name: string,
 	selection: Record<string, ColumnBuilderBase> | undefined,
 	schema: string | undefined,
@@ -147,18 +147,18 @@ export function googleSQLViewWithSchema(
 	return new ViewBuilder(name, schema);
 }
 
-export function googleSQLView<TName extends string>(name: TName): ViewBuilder<TName>;
-export function googleSQLView<TName extends string, TColumns extends Record<string, ColumnBuilderBase>>(
+export function googleSqlView<TName extends string>(name: TName): ViewBuilder<TName>;
+export function googleSqlView<TName extends string, TColumns extends Record<string, ColumnBuilderBase>>(
 	name: TName,
 	columns: TColumns,
 ): ManualViewBuilder<TName, TColumns>;
-export function googleSQLView(
+export function googleSqlView(
 	name: string,
 	columns?: Record<string, ColumnBuilderBase>,
 ): ViewBuilder | ManualViewBuilder {
-	return googleSQLViewWithSchema(name, columns, undefined);
+	return googleSqlViewWithSchema(name, columns, undefined);
 }
 
-export function isGoogleSQLView(obj: unknown): obj is GoogleSQLView {
-	return is(obj, GoogleSQLView);
+export function isGoogleSqlView(obj: unknown): obj is GoogleSqlView {
+	return is(obj, GoogleSqlView);
 }

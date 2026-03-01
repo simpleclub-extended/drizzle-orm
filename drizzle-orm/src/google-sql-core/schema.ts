@@ -1,28 +1,24 @@
 import { entityKind, is } from '~/entity.ts';
 import { SQL, sql, type SQLWrapper } from '~/sql/sql.ts';
-import { type googleSQLSequence, googleSQLSequenceWithSchema } from './sequence.ts';
-import { type GoogleSQLTableFn, googleSQLTableWithSchema } from './table.ts';
-import { type googleSQLView, googleSQLViewWithSchema } from './view.ts';
+import { type googleSqlSequence, googleSqlSequenceWithSchema } from './sequence.ts';
+import { type GoogleSqlTableFn, googleSqlTableWithSchema } from './table.ts';
+import { type googleSqlView, googleSqlViewWithSchema } from './view.ts';
 
-export class GoogleSQLSchema<TName extends string = string> implements SQLWrapper {
-    static readonly [entityKind]: string = 'GoogleSQLSchema';
+export class GoogleSqlSchema<TName extends string = string> implements SQLWrapper {
+    static readonly [entityKind]: string = 'GoogleSqlSchema';
 
     isExisting: boolean = false;
     constructor(
         public readonly schemaName: TName,
     ) {}
 
-    table: GoogleSQLTableFn<TName> = ((name, columns, extraConfig) => {
-        return googleSQLTableWithSchema(name, columns, extraConfig, this.schemaName);
-    }) as GoogleSQLTableFn<TName>;
+    table: GoogleSqlTableFn<TName> = ((name, columns, extraConfig) => {
+        return googleSqlTableWithSchema(name, columns, extraConfig, this.schemaName);
+    }) as GoogleSqlTableFn<TName>;
 
     view = ((name, columns) => {
-        return googleSQLViewWithSchema(name, columns, this.schemaName);
-    }) as typeof googleSQLView;
-
-    sequence: typeof googleSQLSequence = ((name, options) => {
-        return googleSQLSequenceWithSchema(name, options, this.schemaName);
-    });
+        return googleSqlViewWithSchema(name, columns, this.schemaName);
+    }) as typeof googleSqlView;
 
     getSQL(): SQL {
         return new SQL([sql.identifier(this.schemaName)]);
@@ -38,16 +34,16 @@ export class GoogleSQLSchema<TName extends string = string> implements SQLWrappe
     }
 }
 
-export function isGoogleSQLSchema(obj: unknown): obj is GoogleSQLSchema {
-    return is(obj, GoogleSQLSchema);
+export function isGoogleSqlSchema(obj: unknown): obj is GoogleSqlSchema {
+    return is(obj, GoogleSqlSchema);
 }
 
-export function googleSQLSchema<T extends string>(name: T) {
+export function googleSqlSchema<T extends string>(name: T) {
     if (name.toLowerCase() === 'default') {
         throw new Error(
-            `You can't specify 'default' as schema name. GoogleSQL is using default schema by default. If you want to use 'default' schema, just use googleSQLTable() instead of creating a schema`,
+            `You can't specify 'default' as schema name. GoogleSql is using default schema by default. If you want to use 'default' schema, just use googleSqlTable() instead of creating a schema`,
         );
     }
 
-    return new GoogleSQLSchema(name);
+    return new GoogleSqlSchema(name);
 }

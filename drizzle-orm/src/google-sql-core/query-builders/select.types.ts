@@ -1,7 +1,7 @@
-import type { GoogleSQLColumn } from '~/google-sql-core/columns/index.ts';
-import type { GoogleSQLTable, GoogleSQLTableWithColumns } from '~/google-sql-core/table.ts';
-import type { GoogleSQLViewBase } from '~/google-sql-core/view-base.ts';
-import type { GoogleSQLViewWithSelection } from '~/google-sql-core/view.ts';
+import type { GoogleSqlColumn } from '~/google-sql-core/columns/index.ts';
+import type { GoogleSqlTable, GoogleSqlTableWithColumns } from '~/google-sql-core/table.ts';
+import type { GoogleSqlViewBase } from '~/google-sql-core/view-base.ts';
+import type { GoogleSqlViewWithSelection } from '~/google-sql-core/view.ts';
 import type {
 	SelectedFields as SelectedFieldsBase,
 	SelectedFieldsFlat as SelectedFieldsFlatBase,
@@ -24,67 +24,67 @@ import type { ColumnsSelection, Placeholder, SQL, View } from '~/sql/sql.ts';
 import type { Subquery } from '~/subquery.ts';
 import type { Table, UpdateTableConfig } from '~/table.ts';
 import type { Assume, DrizzleTypeError, Equal, ValidateShape } from '~/utils.ts';
-import type { GoogleSQLPreparedQuery, PreparedQueryConfig } from '../session.ts';
-import type { GoogleSQLSelectBase, GoogleSQLSelectQueryBuilderBase } from './select.ts';
+import type { GoogleSqlPreparedQuery, PreparedQueryConfig } from '../session.ts';
+import type { GoogleSqlSelectBase, GoogleSqlSelectQueryBuilderBase } from './select.ts';
 
-export interface GoogleSQLSelectJoinConfig {
+export interface GoogleSqlSelectJoinConfig {
 	on: SQL | undefined;
-	table: GoogleSQLTable | Subquery | GoogleSQLViewBase | SQL;
+	table: GoogleSqlTable | Subquery | GoogleSqlViewBase | SQL;
 	alias: string | undefined;
 	joinType: JoinType;
 }
 
-export type BuildAliasTable<TTable extends GoogleSQLTable | View, TAlias extends string> = TTable extends Table
-	? GoogleSQLTableWithColumns<
+export type BuildAliasTable<TTable extends GoogleSqlTable | View, TAlias extends string> = TTable extends Table
+	? GoogleSqlTableWithColumns<
 		UpdateTableConfig<TTable['_'], {
 			name: TAlias;
-			columns: MapColumnsToTableAlias<TTable['_']['columns'], TAlias, 'google-sql'>;
+			columns: MapColumnsToTableAlias<TTable['_']['columns'], TAlias, 'googlesql'>;
 		}>
 	>
-	: TTable extends View ? GoogleSQLViewWithSelection<
+	: TTable extends View ? GoogleSqlViewWithSelection<
 			TAlias,
 			TTable['_']['existing'],
-			MapColumnsToTableAlias<TTable['_']['selectedFields'], TAlias, 'google-sql'>
+			MapColumnsToTableAlias<TTable['_']['selectedFields'], TAlias, 'googlesql'>
 		>
 	: never;
 
-export interface GoogleSQLSelectConfig {
+export interface GoogleSqlSelectConfig {
 	withList?: Subquery[];
 	// Either fields or fieldsFlat must be defined
 	fields: Record<string, unknown>;
 	fieldsFlat?: SelectedFieldsOrdered;
 	where?: SQL;
 	having?: SQL;
-	table: GoogleSQLTable | Subquery | GoogleSQLViewBase | SQL;
+	table: GoogleSqlTable | Subquery | GoogleSqlViewBase | SQL;
 	limit?: number | Placeholder;
 	offset?: number | Placeholder;
-	joins?: GoogleSQLSelectJoinConfig[];
-	orderBy?: (GoogleSQLColumn | SQL | SQL.Aliased)[];
-	groupBy?: (GoogleSQLColumn | SQL | SQL.Aliased)[];
+	joins?: GoogleSqlSelectJoinConfig[];
+	orderBy?: (GoogleSqlColumn | SQL | SQL.Aliased)[];
+	groupBy?: (GoogleSqlColumn | SQL | SQL.Aliased)[];
 	lockForUpdate?: boolean;
 	distinct?: boolean;
 	setOperators: {
 		rightSelect: TypedQueryBuilder<any, any>;
 		type: SetOperator;
 		isAll: boolean;
-		orderBy?: (GoogleSQLColumn | SQL | SQL.Aliased)[];
+		orderBy?: (GoogleSqlColumn | SQL | SQL.Aliased)[];
 		limit?: number | Placeholder;
 		offset?: number | Placeholder;
 	}[];
 }
 
-export type TableLikeHasEmptySelection<T extends GoogleSQLTable | Subquery | GoogleSQLViewBase | SQL> = T extends
+export type TableLikeHasEmptySelection<T extends GoogleSqlTable | Subquery | GoogleSqlViewBase | SQL> = T extends
 	Subquery ? Equal<T['_']['selectedFields'], {}> extends true ? true : false
 	: false;
 
-export type GoogleSQLSelectJoin<
-	T extends AnyGoogleSQLSelectQueryBuilder,
+export type GoogleSqlSelectJoin<
+	T extends AnyGoogleSqlSelectQueryBuilder,
 	TDynamic extends boolean,
 	TJoinType extends JoinType,
-	TJoinedTable extends GoogleSQLTable | Subquery | GoogleSQLViewBase | SQL,
+	TJoinedTable extends GoogleSqlTable | Subquery | GoogleSqlViewBase | SQL,
 	TJoinedName extends GetSelectTableName<TJoinedTable> = GetSelectTableName<TJoinedTable>,
-> = T extends any ? GoogleSQLSelectWithout<
-		GoogleSQLSelectKind<
+> = T extends any ? GoogleSqlSelectWithout<
+		GoogleSqlSelectKind<
 			T['_']['hkt'],
 			T['_']['tableName'],
 			AppendToResult<
@@ -106,12 +106,12 @@ export type GoogleSQLSelectJoin<
 	>
 	: never;
 
-export type GoogleSQLSelectJoinFn<
-	T extends AnyGoogleSQLSelectQueryBuilder,
+export type GoogleSqlSelectJoinFn<
+	T extends AnyGoogleSqlSelectQueryBuilder,
 	TDynamic extends boolean,
 	TJoinType extends JoinType,
 > = <
-	TJoinedTable extends GoogleSQLTable | Subquery | GoogleSQLViewBase | SQL,
+	TJoinedTable extends GoogleSqlTable | Subquery | GoogleSqlViewBase | SQL,
 	TJoinedName extends GetSelectTableName<TJoinedTable> = GetSelectTableName<TJoinedTable>,
 >(
 	table: TableLikeHasEmptySelection<TJoinedTable> extends true ? DrizzleTypeError<
@@ -119,28 +119,28 @@ export type GoogleSQLSelectJoinFn<
 		>
 		: TJoinedTable,
 	on: ((aliases: T['_']['selection']) => SQL | undefined) | SQL | undefined,
-) => GoogleSQLSelectJoin<T, TDynamic, TJoinType, TJoinedTable, TJoinedName>;
+) => GoogleSqlSelectJoin<T, TDynamic, TJoinType, TJoinedTable, TJoinedName>;
 
-export type GoogleSQLSelectCrossJoinFn<
-	T extends AnyGoogleSQLSelectQueryBuilder,
+export type GoogleSqlSelectCrossJoinFn<
+	T extends AnyGoogleSqlSelectQueryBuilder,
 	TDynamic extends boolean,
 > = <
-	TJoinedTable extends GoogleSQLTable | Subquery | GoogleSQLViewBase | SQL,
+	TJoinedTable extends GoogleSqlTable | Subquery | GoogleSqlViewBase | SQL,
 	TJoinedName extends GetSelectTableName<TJoinedTable> = GetSelectTableName<TJoinedTable>,
 >(
 	table: TableLikeHasEmptySelection<TJoinedTable> extends true ? DrizzleTypeError<
-			"Cannot reference a data-modifying statement subquery if it doesn't contain a `returning` clause"
+			"Cannot reference a data-modifying statement subquery if it doesn't contain a `then return` clause"
 		>
 		: TJoinedTable,
-) => GoogleSQLSelectJoin<T, TDynamic, 'cross', TJoinedTable, TJoinedName>;
+) => GoogleSqlSelectJoin<T, TDynamic, 'cross', TJoinedTable, TJoinedName>;
 
-export type SelectedFieldsFlat = SelectedFieldsFlatBase<GoogleSQLColumn>;
+export type SelectedFieldsFlat = SelectedFieldsFlatBase<GoogleSqlColumn>;
 
-export type SelectedFields = SelectedFieldsBase<GoogleSQLColumn, GoogleSQLTable>;
+export type SelectedFields = SelectedFieldsBase<GoogleSqlColumn, GoogleSqlTable>;
 
-export type SelectedFieldsOrdered = SelectedFieldsOrderedBase<GoogleSQLColumn>;
+export type SelectedFieldsOrdered = SelectedFieldsOrderedBase<GoogleSqlColumn>;
 
-export interface GoogleSQLSelectHKTBase {
+export interface GoogleSqlSelectHKTBase {
 	tableName: string | undefined;
 	selection: unknown;
 	selectMode: SelectMode;
@@ -152,8 +152,8 @@ export interface GoogleSQLSelectHKTBase {
 	_type: unknown;
 }
 
-export type GoogleSQLSelectKind<
-	T extends GoogleSQLSelectHKTBase,
+export type GoogleSqlSelectKind<
+	T extends GoogleSqlSelectHKTBase,
 	TTableName extends string | undefined,
 	TSelection extends ColumnsSelection,
 	TSelectMode extends SelectMode,
@@ -173,9 +173,9 @@ export type GoogleSQLSelectKind<
 	selectedFields: TSelectedFields;
 })['_type'];
 
-export interface GoogleSQLSelectQueryBuilderHKT extends GoogleSQLSelectHKTBase {
-	_type: GoogleSQLSelectQueryBuilderBase<
-		GoogleSQLSelectQueryBuilderHKT,
+export interface GoogleSqlSelectQueryBuilderHKT extends GoogleSqlSelectHKTBase {
+	_type: GoogleSqlSelectQueryBuilderBase<
+		GoogleSqlSelectQueryBuilderHKT,
 		this['tableName'],
 		Assume<this['selection'], ColumnsSelection>,
 		this['selectMode'],
@@ -187,8 +187,8 @@ export interface GoogleSQLSelectQueryBuilderHKT extends GoogleSQLSelectHKTBase {
 	>;
 }
 
-export interface GoogleSQLSelectHKT extends GoogleSQLSelectHKTBase {
-	_type: GoogleSQLSelectBase<
+export interface GoogleSqlSelectHKT extends GoogleSqlSelectHKTBase {
+	_type: GoogleSqlSelectBase<
 		this['tableName'],
 		Assume<this['selection'], ColumnsSelection>,
 		this['selectMode'],
@@ -200,15 +200,15 @@ export interface GoogleSQLSelectHKT extends GoogleSQLSelectHKTBase {
 	>;
 }
 
-export type CreateGoogleSQLSelectFromBuilderMode<
+export type CreateGoogleSqlSelectFromBuilderMode<
 	TBuilderMode extends 'db' | 'qb',
 	TTableName extends string | undefined,
 	TSelection extends ColumnsSelection,
 	TSelectMode extends SelectMode,
-> = TBuilderMode extends 'db' ? GoogleSQLSelectBase<TTableName, TSelection, TSelectMode>
-	: GoogleSQLSelectQueryBuilderBase<GoogleSQLSelectQueryBuilderHKT, TTableName, TSelection, TSelectMode>;
+> = TBuilderMode extends 'db' ? GoogleSqlSelectBase<TTableName, TSelection, TSelectMode>
+	: GoogleSqlSelectQueryBuilderBase<GoogleSqlSelectQueryBuilderHKT, TTableName, TSelection, TSelectMode>;
 
-export type GoogleSQLSetOperatorExcludedMethods =
+export type GoogleSqlSetOperatorExcludedMethods =
 	| 'leftJoin'
 	| 'rightJoin'
 	| 'innerJoin'
@@ -217,13 +217,13 @@ export type GoogleSQLSetOperatorExcludedMethods =
 	| 'having'
 	| 'groupBy';
 
-export type GoogleSQLSelectWithout<
-	T extends AnyGoogleSQLSelectQueryBuilder,
+export type GoogleSqlSelectWithout<
+	T extends AnyGoogleSqlSelectQueryBuilder,
 	TDynamic extends boolean,
 	K extends keyof T & string,
 	TResetExcluded extends boolean = false,
 > = TDynamic extends true ? T : Omit<
-	GoogleSQLSelectKind<
+	GoogleSqlSelectKind<
 		T['_']['hkt'],
 		T['_']['tableName'],
 		T['_']['selection'],
@@ -237,13 +237,13 @@ export type GoogleSQLSelectWithout<
 	TResetExcluded extends true ? K : T['_']['excludedMethods'] | K
 >;
 
-export type GoogleSQLSelectPrepare<T extends AnyGoogleSQLSelect> = GoogleSQLPreparedQuery<
+export type GoogleSqlSelectPrepare<T extends AnyGoogleSqlSelect> = GoogleSqlPreparedQuery<
 	PreparedQueryConfig & {
 		execute: T['_']['result'];
 	}
 >;
 
-export type GoogleSQLSelectDynamic<T extends AnyGoogleSQLSelectQueryBuilder> = GoogleSQLSelectKind<
+export type GoogleSqlSelectDynamic<T extends AnyGoogleSqlSelectQueryBuilder> = GoogleSqlSelectKind<
 	T['_']['hkt'],
 	T['_']['tableName'],
 	T['_']['selection'],
@@ -255,15 +255,15 @@ export type GoogleSQLSelectDynamic<T extends AnyGoogleSQLSelectQueryBuilder> = G
 	T['_']['selectedFields']
 >;
 
-export type GoogleSQLSelectQueryBuilder<
-	THKT extends GoogleSQLSelectHKTBase = GoogleSQLSelectQueryBuilderHKT,
+export type GoogleSqlSelectQueryBuilder<
+	THKT extends GoogleSqlSelectHKTBase = GoogleSqlSelectQueryBuilderHKT,
 	TTableName extends string | undefined = string | undefined,
 	TSelection extends ColumnsSelection = ColumnsSelection,
 	TSelectMode extends SelectMode = SelectMode,
 	TNullabilityMap extends Record<string, JoinNullability> = Record<string, JoinNullability>,
 	TResult extends any[] = unknown[],
 	TSelectedFields extends ColumnsSelection = ColumnsSelection,
-> = GoogleSQLSelectQueryBuilderBase<
+> = GoogleSqlSelectQueryBuilderBase<
 	THKT,
 	TTableName,
 	TSelection,
@@ -275,7 +275,7 @@ export type GoogleSQLSelectQueryBuilder<
 	TSelectedFields
 >;
 
-export type AnyGoogleSQLSelectQueryBuilder = GoogleSQLSelectQueryBuilderBase<
+export type AnyGoogleSqlSelectQueryBuilder = GoogleSqlSelectQueryBuilderBase<
 	any,
 	any,
 	any,
@@ -287,7 +287,7 @@ export type AnyGoogleSQLSelectQueryBuilder = GoogleSQLSelectQueryBuilderBase<
 	any
 >;
 
-export type AnyGoogleSQLSetOperatorInterface = GoogleSQLSetOperatorInterface<
+export type AnyGoogleSqlSetOperatorInterface = GoogleSqlSetOperatorInterface<
 	any,
 	any,
 	any,
@@ -298,7 +298,7 @@ export type AnyGoogleSQLSetOperatorInterface = GoogleSQLSetOperatorInterface<
 	any
 >;
 
-export interface GoogleSQLSetOperatorInterface<
+export interface GoogleSqlSetOperatorInterface<
 	TTableName extends string | undefined,
 	TSelection extends ColumnsSelection,
 	TSelectMode extends SelectMode,
@@ -310,7 +310,7 @@ export interface GoogleSQLSetOperatorInterface<
 	TSelectedFields extends ColumnsSelection = BuildSubquerySelection<TSelection, TNullabilityMap>,
 > {
 	_: {
-		readonly hkt: GoogleSQLSelectHKT;
+		readonly hkt: GoogleSqlSelectHKT;
 		readonly tableName: TTableName;
 		readonly selection: TSelection;
 		readonly selectMode: TSelectMode;
@@ -322,7 +322,7 @@ export interface GoogleSQLSetOperatorInterface<
 	};
 }
 
-export type GoogleSQLSetOperatorWithResult<TResult extends any[]> = GoogleSQLSetOperatorInterface<
+export type GoogleSqlSetOperatorWithResult<TResult extends any[]> = GoogleSqlSetOperatorInterface<
 	any,
 	any,
 	any,
@@ -333,33 +333,33 @@ export type GoogleSQLSetOperatorWithResult<TResult extends any[]> = GoogleSQLSet
 	any
 >;
 
-export type GoogleSQLSelect<
+export type GoogleSqlSelect<
 	TTableName extends string | undefined = string | undefined,
 	TSelection extends ColumnsSelection = Record<string, any>,
 	TSelectMode extends SelectMode = SelectMode,
 	TNullabilityMap extends Record<string, JoinNullability> = Record<string, JoinNullability>,
-> = GoogleSQLSelectBase<TTableName, TSelection, TSelectMode, TNullabilityMap, true, never>;
+> = GoogleSqlSelectBase<TTableName, TSelection, TSelectMode, TNullabilityMap, true, never>;
 
-export type AnyGoogleSQLSelect = GoogleSQLSelectBase<any, any, any, any, any, any, any, any>;
+export type AnyGoogleSqlSelect = GoogleSqlSelectBase<any, any, any, any, any, any, any, any>;
 
-export type GoogleSQLSetOperator<
+export type GoogleSqlSetOperator<
 	TTableName extends string | undefined = string | undefined,
 	TSelection extends ColumnsSelection = Record<string, any>,
 	TSelectMode extends SelectMode = SelectMode,
 	TNullabilityMap extends Record<string, JoinNullability> = Record<string, JoinNullability>,
-> = GoogleSQLSelectBase<
+> = GoogleSqlSelectBase<
 	TTableName,
 	TSelection,
 	TSelectMode,
 	TNullabilityMap,
 	true,
-	GoogleSQLSetOperatorExcludedMethods
+	GoogleSqlSetOperatorExcludedMethods
 >;
 
 export type SetOperatorRightSelect<
-	TValue extends GoogleSQLSetOperatorWithResult<TResult>,
+	TValue extends GoogleSqlSetOperatorWithResult<TResult>,
 	TResult extends any[],
-> = TValue extends GoogleSQLSetOperatorInterface<any, any, any, any, any, any, infer TValueResult, any> ? ValidateShape<
+> = TValue extends GoogleSqlSetOperatorInterface<any, any, any, any, any, any, infer TValueResult, any> ? ValidateShape<
 		TValueResult[number],
 		TResult[number],
 		TypedQueryBuilder<any, TValueResult>
@@ -367,11 +367,11 @@ export type SetOperatorRightSelect<
 	: TValue;
 
 export type SetOperatorRestSelect<
-	TValue extends readonly GoogleSQLSetOperatorWithResult<TResult>[],
+	TValue extends readonly GoogleSqlSetOperatorWithResult<TResult>[],
 	TResult extends any[],
 > = TValue extends [infer First, ...infer Rest]
-	? First extends GoogleSQLSetOperatorInterface<any, any, any, any, any, any, infer TValueResult, any>
-		? Rest extends AnyGoogleSQLSetOperatorInterface[] ? [
+	? First extends GoogleSqlSetOperatorInterface<any, any, any, any, any, any, infer TValueResult, any>
+		? Rest extends AnyGoogleSqlSetOperatorInterface[] ? [
 				ValidateShape<TValueResult[number], TResult[number], TypedQueryBuilder<any, TValueResult>>,
 				...SetOperatorRestSelect<Rest, TResult>,
 			]
@@ -379,12 +379,12 @@ export type SetOperatorRestSelect<
 	: never
 	: TValue;
 
-export type GoogleSQLCreateSetOperatorFn = <
+export type GoogleSqlCreateSetOperatorFn = <
 	TTableName extends string | undefined,
 	TSelection extends ColumnsSelection,
 	TSelectMode extends SelectMode,
-	TValue extends GoogleSQLSetOperatorWithResult<TResult>,
-	TRest extends GoogleSQLSetOperatorWithResult<TResult>[],
+	TValue extends GoogleSqlSetOperatorWithResult<TResult>,
+	TRest extends GoogleSqlSetOperatorWithResult<TResult>[],
 	TNullabilityMap extends Record<string, JoinNullability> = TTableName extends string ? Record<TTableName, 'not-null'>
 		: {},
 	TDynamic extends boolean = false,
@@ -392,7 +392,7 @@ export type GoogleSQLCreateSetOperatorFn = <
 	TResult extends any[] = SelectResult<TSelection, TSelectMode, TNullabilityMap>[],
 	TSelectedFields extends ColumnsSelection = BuildSubquerySelection<TSelection, TNullabilityMap>,
 >(
-	leftSelect: GoogleSQLSetOperatorInterface<
+	leftSelect: GoogleSqlSetOperatorInterface<
 		TTableName,
 		TSelection,
 		TSelectMode,
@@ -404,8 +404,8 @@ export type GoogleSQLCreateSetOperatorFn = <
 	>,
 	rightSelect: SetOperatorRightSelect<TValue, TResult>,
 	...restSelects: SetOperatorRestSelect<TRest, TResult>
-) => GoogleSQLSelectWithout<
-	GoogleSQLSelectBase<
+) => GoogleSqlSelectWithout<
+	GoogleSqlSelectBase<
 		TTableName,
 		TSelection,
 		TSelectMode,
@@ -416,15 +416,15 @@ export type GoogleSQLCreateSetOperatorFn = <
 		TSelectedFields
 	>,
 	false,
-	GoogleSQLSetOperatorExcludedMethods,
+	GoogleSqlSetOperatorExcludedMethods,
 	true
 >;
 
-export type GetGoogleSQLSetOperators = {
-	union: GoogleSQLCreateSetOperatorFn;
-	intersect: GoogleSQLCreateSetOperatorFn;
-	except: GoogleSQLCreateSetOperatorFn;
-	unionAll: GoogleSQLCreateSetOperatorFn;
-	intersectAll: GoogleSQLCreateSetOperatorFn;
-	exceptAll: GoogleSQLCreateSetOperatorFn;
+export type GetGoogleSqlSetOperators = {
+	union: GoogleSqlCreateSetOperatorFn;
+	intersect: GoogleSqlCreateSetOperatorFn;
+	except: GoogleSqlCreateSetOperatorFn;
+	unionAll: GoogleSqlCreateSetOperatorFn;
+	intersectAll: GoogleSqlCreateSetOperatorFn;
+	exceptAll: GoogleSqlCreateSetOperatorFn;
 };

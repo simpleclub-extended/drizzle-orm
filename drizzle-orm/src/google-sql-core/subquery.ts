@@ -5,12 +5,12 @@ import type { Subquery, WithSubquery, WithSubqueryWithoutSelection } from '~/sub
 import type { QueryBuilder } from './query-builders/query-builder.ts';
 
 export type SubqueryWithSelection<TSelection extends ColumnsSelection, TAlias extends string> =
-	& Subquery<TAlias, AddAliasToSelection<TSelection, TAlias, 'google-sql'>>
-	& AddAliasToSelection<TSelection, TAlias, 'google-sql'>;
+	& Subquery<TAlias, AddAliasToSelection<TSelection, TAlias, 'googlesql'>>
+	& AddAliasToSelection<TSelection, TAlias, 'googlesql'>;
 
 export type WithSubqueryWithSelection<TSelection extends ColumnsSelection, TAlias extends string> =
-	& WithSubquery<TAlias, AddAliasToSelection<TSelection, TAlias, 'google-sql'>>
-	& AddAliasToSelection<TSelection, TAlias, 'google-sql'>;
+	& WithSubquery<TAlias, AddAliasToSelection<TSelection, TAlias, 'googlesql'>>
+	& AddAliasToSelection<TSelection, TAlias, 'googlesql'>;
 
 export interface WithBuilder {
 	<TAlias extends string>(alias: TAlias): {

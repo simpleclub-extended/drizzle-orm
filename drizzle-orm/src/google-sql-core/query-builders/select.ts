@@ -1,9 +1,9 @@
-import type { GoogleSQLColumn } from '~/google-sql-core/columns/index.ts';
-import type { GoogleSQLDialect } from '~/google-sql-core/dialect.ts';
-import type { GoogleSQLSession, PreparedQueryConfig } from '~/google-sql-core/session.ts';
+import type { GoogleSqlColumn } from '~/google-sql-core/columns/index.ts';
+import type { GoogleSqlDialect } from '~/google-sql-core/dialect.ts';
+import type { GoogleSqlSession, PreparedQueryConfig } from '~/google-sql-core/session.ts';
 import type { SubqueryWithSelection } from '~/google-sql-core/subquery.ts';
-import type { GoogleSQLTable } from '~/google-sql-core/table.ts';
-import { GoogleSQLViewBase } from '~/google-sql-core/view-base.ts';
+import type { GoogleSqlTable } from '~/google-sql-core/table.ts';
+import { GoogleSqlViewBase } from '~/google-sql-core/view-base.ts';
 import { entityKind, is } from '~/entity.ts';
 import { TypedQueryBuilder } from '~/query-builders/query-builder.ts';
 import type {
@@ -36,42 +36,42 @@ import {
 } from '~/utils.ts';
 import { ViewBaseConfig } from '~/view-common.ts';
 import type {
-	AnyGoogleSQLSelect,
-	GoogleSQLCreateSetOperatorFn,
-	GoogleSQLSelectConfig,
-	GoogleSQLSelectCrossJoinFn,
-	GoogleSQLSelectDynamic,
-	GoogleSQLSelectHKT,
-	GoogleSQLSelectHKTBase,
-	GoogleSQLSelectJoinFn,
-	GoogleSQLSelectPrepare,
-	GoogleSQLSelectWithout,
-	GoogleSQLSetOperatorExcludedMethods,
-	GoogleSQLSetOperatorWithResult,
-	CreateGoogleSQLSelectFromBuilderMode,
-	GetGoogleSQLSetOperators,
+	AnyGoogleSqlSelect,
+	GoogleSqlCreateSetOperatorFn,
+	GoogleSqlSelectConfig,
+	GoogleSqlSelectCrossJoinFn,
+	GoogleSqlSelectDynamic,
+	GoogleSqlSelectHKT,
+	GoogleSqlSelectHKTBase,
+	GoogleSqlSelectJoinFn,
+	GoogleSqlSelectPrepare,
+	GoogleSqlSelectWithout,
+	GoogleSqlSetOperatorExcludedMethods,
+	GoogleSqlSetOperatorWithResult,
+	CreateGoogleSqlSelectFromBuilderMode,
+	GetGoogleSqlSetOperators,
 	SelectedFields,
 	SetOperatorRightSelect,
 	TableLikeHasEmptySelection,
 } from './select.types.ts';
 
-export class GoogleSQLSelectBuilder<
+export class GoogleSqlSelectBuilder<
 	TSelection extends SelectedFields | undefined,
 	TBuilderMode extends 'db' | 'qb' = 'db',
 > {
-	static readonly [entityKind]: string = 'GoogleSQLSelectBuilder';
+	static readonly [entityKind]: string = 'GoogleSqlSelectBuilder';
 
 	private fields: TSelection;
-	private session: GoogleSQLSession | undefined;
-	private dialect: GoogleSQLDialect;
+	private session: GoogleSqlSession | undefined;
+	private dialect: GoogleSqlDialect;
 	private withList: Subquery[] = [];
 	private distinct: boolean | undefined;
 
 	constructor(
 		config: {
 			fields: TSelection;
-			session: GoogleSQLSession | undefined;
-			dialect: GoogleSQLDialect;
+			session: GoogleSqlSession | undefined;
+			dialect: GoogleSqlDialect;
 			withList?: Subquery[];
 			distinct?: boolean;
 		},
@@ -91,12 +91,12 @@ export class GoogleSQLSelectBuilder<
 	 *
 	 * {@link https://cloud.google.com/spanner/docs/reference/standard-sql/query-syntax#from_clause | Google Cloud Spanner from documentation}
 	 */
-	from<TFrom extends GoogleSQLTable | Subquery | GoogleSQLViewBase | SQL>(
+	from<TFrom extends GoogleSqlTable | Subquery | GoogleSqlViewBase | SQL>(
 		source: TableLikeHasEmptySelection<TFrom> extends true ? DrizzleTypeError<
 				"Cannot reference a data-modifying statement subquery if it doesn't contain a `returning` clause"
 			>
 			: TFrom,
-	): CreateGoogleSQLSelectFromBuilderMode<
+	): CreateGoogleSqlSelectFromBuilderMode<
 		TBuilderMode,
 		GetSelectTableName<TFrom>,
 		TSelection extends undefined ? GetSelectTableSelection<TFrom> : TSelection,
@@ -115,15 +115,15 @@ export class GoogleSQLSelectBuilder<
 					key,
 				) => [key, src[key as unknown as keyof typeof src] as unknown as SelectedFields[string]]),
 			);
-		} else if (is(src, GoogleSQLViewBase)) {
+		} else if (is(src, GoogleSqlViewBase)) {
 			fields = src[ViewBaseConfig].selectedFields as SelectedFields;
 		} else if (is(src, SQL)) {
 			fields = {};
 		} else {
-			fields = getTableColumns<GoogleSQLTable>(src);
+			fields = getTableColumns<GoogleSqlTable>(src);
 		}
 
-		return (new GoogleSQLSelectBase({
+		return (new GoogleSqlSelectBase({
 			table: src,
 			fields,
 			isPartialSelect,
@@ -135,8 +135,8 @@ export class GoogleSQLSelectBuilder<
 	}
 }
 
-export abstract class GoogleSQLSelectQueryBuilderBase<
-	THKT extends GoogleSQLSelectHKTBase,
+export abstract class GoogleSqlSelectQueryBuilderBase<
+	THKT extends GoogleSqlSelectHKTBase,
 	TTableName extends string | undefined,
 	TSelection extends ColumnsSelection,
 	TSelectMode extends SelectMode,
@@ -147,10 +147,10 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 	TResult extends any[] = SelectResult<TSelection, TSelectMode, TNullabilityMap>[],
 	TSelectedFields extends ColumnsSelection = BuildSubquerySelection<TSelection, TNullabilityMap>,
 > extends TypedQueryBuilder<TSelectedFields, TResult> {
-	static override readonly [entityKind]: string = 'GoogleSQLSelectQueryBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlSelectQueryBuilder';
 
 	override readonly _: {
-		readonly dialect: 'google-sql';
+		readonly dialect: 'googlesql';
 		readonly hkt: THKT;
 		readonly tableName: TTableName;
 		readonly selection: TSelection;
@@ -162,20 +162,20 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 		readonly selectedFields: TSelectedFields;
 	};
 
-	protected config: GoogleSQLSelectConfig;
+	protected config: GoogleSqlSelectConfig;
 	protected joinsNotNullableMap: Record<string, boolean>;
 	private tableName: string | undefined;
 	private isPartialSelect: boolean;
-	protected session: GoogleSQLSession | undefined;
-	protected dialect: GoogleSQLDialect;
+	protected session: GoogleSqlSession | undefined;
+	protected dialect: GoogleSqlDialect;
 
 	constructor(
 		{ table, fields, isPartialSelect, session, dialect, withList, distinct }: {
-			table: GoogleSQLSelectConfig['table'];
-			fields: GoogleSQLSelectConfig['fields'];
+			table: GoogleSqlSelectConfig['table'];
+			fields: GoogleSqlSelectConfig['fields'];
 			isPartialSelect: boolean;
-			session: GoogleSQLSession | undefined;
-			dialect: GoogleSQLDialect;
+			session: GoogleSqlSession | undefined;
+			dialect: GoogleSqlDialect;
 			withList: Subquery[];
 			distinct: boolean | undefined;
 		},
@@ -202,11 +202,11 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 		TJoinType extends JoinType,
 	>(
 		joinType: TJoinType,
-	): 'cross' extends TJoinType ? GoogleSQLSelectCrossJoinFn<this, TDynamic>
-		: GoogleSQLSelectJoinFn<this, TDynamic, TJoinType>
+	): 'cross' extends TJoinType ? GoogleSqlSelectCrossJoinFn<this, TDynamic>
+		: GoogleSqlSelectJoinFn<this, TDynamic, TJoinType>
 	{
 		return ((
-			table: GoogleSQLTable | Subquery | GoogleSQLViewBase | SQL,
+			table: GoogleSqlTable | Subquery | GoogleSqlViewBase | SQL,
 			on?: ((aliases: TSelection) => SQL | undefined) | SQL | undefined,
 		) => {
 			const baseTableName = this.tableName;
@@ -427,19 +427,19 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 	private createSetOperator(
 		type: SetOperator,
 		isAll: boolean,
-	): <TValue extends GoogleSQLSetOperatorWithResult<TResult>>(
+	): <TValue extends GoogleSqlSetOperatorWithResult<TResult>>(
 		rightSelection:
-			| ((setOperators: GetGoogleSQLSetOperators) => SetOperatorRightSelect<TValue, TResult>)
+			| ((setOperators: GetGoogleSqlSetOperators) => SetOperatorRightSelect<TValue, TResult>)
 			| SetOperatorRightSelect<TValue, TResult>,
-	) => GoogleSQLSelectWithout<
+	) => GoogleSqlSelectWithout<
 		this,
 		TDynamic,
-		GoogleSQLSetOperatorExcludedMethods,
+		GoogleSqlSetOperatorExcludedMethods,
 		true
 	> {
 		return (rightSelection) => {
 			const rightSelect = (typeof rightSelection === 'function'
-				? rightSelection(getGoogleSQLSetOperators())
+				? rightSelection(getGoogleSqlSetOperators())
 				: rightSelection) as TypedQueryBuilder<
 					any,
 					TResult
@@ -649,10 +649,10 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 	exceptAll = this.createSetOperator('except', true);
 
 	/** @internal */
-	addSetOperators(setOperators: GoogleSQLSelectConfig['setOperators']): GoogleSQLSelectWithout<
+	addSetOperators(setOperators: GoogleSqlSelectConfig['setOperators']): GoogleSqlSelectWithout<
 		this,
 		TDynamic,
-		GoogleSQLSetOperatorExcludedMethods,
+		GoogleSqlSetOperatorExcludedMethods,
 		true
 	> {
 		this.config.setOperators.push(...setOperators);
@@ -690,7 +690,7 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 	 */
 	where(
 		where: ((aliases: this['_']['selection']) => SQL | undefined) | SQL | undefined,
-	): GoogleSQLSelectWithout<this, TDynamic, 'where'> {
+	): GoogleSqlSelectWithout<this, TDynamic, 'where'> {
 		if (typeof where === 'function') {
 			where = where(
 				new Proxy(
@@ -727,7 +727,7 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 	 */
 	having(
 		having: ((aliases: this['_']['selection']) => SQL | undefined) | SQL | undefined,
-	): GoogleSQLSelectWithout<this, TDynamic, 'having'> {
+	): GoogleSqlSelectWithout<this, TDynamic, 'having'> {
 		if (typeof having === 'function') {
 			having = having(
 				new Proxy(
@@ -760,14 +760,14 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 	 * ```
 	 */
 	groupBy(
-		builder: (aliases: this['_']['selection']) => ValueOrArray<GoogleSQLColumn | SQL | SQL.Aliased>,
-	): GoogleSQLSelectWithout<this, TDynamic, 'groupBy'>;
-	groupBy(...columns: (GoogleSQLColumn | SQL | SQL.Aliased)[]): GoogleSQLSelectWithout<this, TDynamic, 'groupBy'>;
+		builder: (aliases: this['_']['selection']) => ValueOrArray<GoogleSqlColumn | SQL | SQL.Aliased>,
+	): GoogleSqlSelectWithout<this, TDynamic, 'groupBy'>;
+	groupBy(...columns: (GoogleSqlColumn | SQL | SQL.Aliased)[]): GoogleSqlSelectWithout<this, TDynamic, 'groupBy'>;
 	groupBy(
 		...columns:
-			| [(aliases: this['_']['selection']) => ValueOrArray<GoogleSQLColumn | SQL | SQL.Aliased>]
-			| (GoogleSQLColumn | SQL | SQL.Aliased)[]
-	): GoogleSQLSelectWithout<this, TDynamic, 'groupBy'> {
+			| [(aliases: this['_']['selection']) => ValueOrArray<GoogleSqlColumn | SQL | SQL.Aliased>]
+			| (GoogleSqlColumn | SQL | SQL.Aliased)[]
+	): GoogleSqlSelectWithout<this, TDynamic, 'groupBy'> {
 		if (typeof columns[0] === 'function') {
 			const groupBy = columns[0](
 				new Proxy(
@@ -777,7 +777,7 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 			);
 			this.config.groupBy = Array.isArray(groupBy) ? groupBy : [groupBy];
 		} else {
-			this.config.groupBy = columns as (GoogleSQLColumn | SQL | SQL.Aliased)[];
+			this.config.groupBy = columns as (GoogleSqlColumn | SQL | SQL.Aliased)[];
 		}
 		return this as any;
 	}
@@ -807,14 +807,14 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 	 * ```
 	 */
 	orderBy(
-		builder: (aliases: this['_']['selection']) => ValueOrArray<GoogleSQLColumn | SQL | SQL.Aliased>,
-	): GoogleSQLSelectWithout<this, TDynamic, 'orderBy'>;
-	orderBy(...columns: (GoogleSQLColumn | SQL | SQL.Aliased)[]): GoogleSQLSelectWithout<this, TDynamic, 'orderBy'>;
+		builder: (aliases: this['_']['selection']) => ValueOrArray<GoogleSqlColumn | SQL | SQL.Aliased>,
+	): GoogleSqlSelectWithout<this, TDynamic, 'orderBy'>;
+	orderBy(...columns: (GoogleSqlColumn | SQL | SQL.Aliased)[]): GoogleSqlSelectWithout<this, TDynamic, 'orderBy'>;
 	orderBy(
 		...columns:
-			| [(aliases: this['_']['selection']) => ValueOrArray<GoogleSQLColumn | SQL | SQL.Aliased>]
-			| (GoogleSQLColumn | SQL | SQL.Aliased)[]
-	): GoogleSQLSelectWithout<this, TDynamic, 'orderBy'> {
+			| [(aliases: this['_']['selection']) => ValueOrArray<GoogleSqlColumn | SQL | SQL.Aliased>]
+			| (GoogleSqlColumn | SQL | SQL.Aliased)[]
+	): GoogleSqlSelectWithout<this, TDynamic, 'orderBy'> {
 		if (typeof columns[0] === 'function') {
 			const orderBy = columns[0](
 				new Proxy(
@@ -831,7 +831,7 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 				this.config.orderBy = orderByArray;
 			}
 		} else {
-			const orderByArray = columns as (GoogleSQLColumn | SQL | SQL.Aliased)[];
+			const orderByArray = columns as (GoogleSqlColumn | SQL | SQL.Aliased)[];
 
 			if (this.config.setOperators.length > 0) {
 				this.config.setOperators.at(-1)!.orderBy = orderByArray;
@@ -858,7 +858,7 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 	 * await db.select().from(people).limit(10);
 	 * ```
 	 */
-	limit(limit: number | Placeholder): GoogleSQLSelectWithout<this, TDynamic, 'limit'> {
+	limit(limit: number | Placeholder): GoogleSqlSelectWithout<this, TDynamic, 'limit'> {
 		if (this.config.setOperators.length > 0) {
 			this.config.setOperators.at(-1)!.limit = limit;
 		} else {
@@ -883,7 +883,7 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 	 * await db.select().from(people).offset(10).limit(10);
 	 * ```
 	 */
-	offset(offset: number | Placeholder): GoogleSQLSelectWithout<this, TDynamic, 'offset'> {
+	offset(offset: number | Placeholder): GoogleSqlSelectWithout<this, TDynamic, 'offset'> {
 		if (this.config.setOperators.length > 0) {
 			this.config.setOperators.at(-1)!.offset = offset;
 		} else {
@@ -902,7 +902,7 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 	 * @param strength the lock strength.
 	 * @param config the lock configuration.
 	 */
-	forUpdate(): GoogleSQLSelectWithout<this, TDynamic, 'forUpdate'> {
+	forUpdate(): GoogleSqlSelectWithout<this, TDynamic, 'forUpdate'> {
 		this.config.lockForUpdate = true;
 		return this as any;
 	}
@@ -934,12 +934,12 @@ export abstract class GoogleSQLSelectQueryBuilderBase<
 		) as this['_']['selectedFields'];
 	}
 
-	$dynamic(): GoogleSQLSelectDynamic<this> {
+	$dynamic(): GoogleSqlSelectDynamic<this> {
 		return this;
 	}
 }
 
-export interface GoogleSQLSelectBase<
+export interface GoogleSqlSelectBase<
 	TTableName extends string | undefined,
 	TSelection extends ColumnsSelection,
 	TSelectMode extends SelectMode,
@@ -950,8 +950,8 @@ export interface GoogleSQLSelectBase<
 	TResult extends any[] = SelectResult<TSelection, TSelectMode, TNullabilityMap>[],
 	TSelectedFields extends ColumnsSelection = BuildSubquerySelection<TSelection, TNullabilityMap>,
 > extends
-	GoogleSQLSelectQueryBuilderBase<
-		GoogleSQLSelectHKT,
+	GoogleSqlSelectQueryBuilderBase<
+		GoogleSqlSelectHKT,
 		TTableName,
 		TSelection,
 		TSelectMode,
@@ -965,7 +965,7 @@ export interface GoogleSQLSelectBase<
 	SQLWrapper
 {}
 
-export class GoogleSQLSelectBase<
+export class GoogleSqlSelectBase<
 	TTableName extends string | undefined,
 	TSelection extends ColumnsSelection,
 	TSelectMode extends SelectMode,
@@ -975,8 +975,8 @@ export class GoogleSQLSelectBase<
 	TExcludedMethods extends string = never,
 	TResult = SelectResult<TSelection, TSelectMode, TNullabilityMap>[],
 	TSelectedFields = BuildSubquerySelection<TSelection, TNullabilityMap>,
-> extends GoogleSQLSelectQueryBuilderBase<
-	GoogleSQLSelectHKT,
+> extends GoogleSqlSelectQueryBuilderBase<
+	GoogleSqlSelectHKT,
 	TTableName,
 	TSelection,
 	TSelectMode,
@@ -985,17 +985,17 @@ export class GoogleSQLSelectBase<
 	TExcludedMethods,
 	TResult,
 	TSelectedFields
-> implements RunnableQuery<TResult, 'google-sql'>, SQLWrapper {
-	static override readonly [entityKind]: string = 'GoogleSQLSelect';
+> implements RunnableQuery<TResult, 'googlesql'>, SQLWrapper {
+	static override readonly [entityKind]: string = 'GoogleSqlSelect';
 
 	/** @internal */
-	_prepare(name?: string, generateName = false): GoogleSQLSelectPrepare<this> {
+	_prepare(name?: string, generateName = false): GoogleSqlSelectPrepare<this> {
 		const { session, config, dialect, joinsNotNullableMap } = this;
 		if (!session) {
 			throw new Error('Cannot execute a query on a query builder. Please use a database instance instead.');
 		}
 		return tracer.startActiveSpan('drizzle.prepareQuery', () => {
-			const fieldsList = orderSelectedFields<GoogleSQLColumn>(config.fields);
+			const fieldsList = orderSelectedFields<GoogleSqlColumn>(config.fields);
 			const query = dialect.sqlToQuery(this.getSQL());
 			const preparedQuery = session.prepareQuery<
 				PreparedQueryConfig & { execute: TResult }
@@ -1018,8 +1018,7 @@ export class GoogleSQLSelectBase<
 	 *
 	 * {@link https://cloud.google.com/spanner/docs/reference/standard-sql/query-syntax | Google Cloud Spanner query syntax}
 	 */
-	prepare(name?: string): GoogleSQLSelectPrepare<this> {
-		// todo: Verify if Spanner supports prepared statements.
+	prepare(name?: string): GoogleSqlSelectPrepare<this> {
 		return this._prepare(name, true);
 	}
 
@@ -1030,14 +1029,14 @@ export class GoogleSQLSelectBase<
 	};
 }
 
-applyMixins(GoogleSQLSelectBase, [QueryPromise]);
+applyMixins(GoogleSqlSelectBase, [QueryPromise]);
 
-function createSetOperator(type: SetOperator, isAll: boolean): GoogleSQLCreateSetOperatorFn {
+function createSetOperator(type: SetOperator, isAll: boolean): GoogleSqlCreateSetOperatorFn {
 	return (leftSelect, rightSelect, ...restSelects) => {
 		const setOperators = [rightSelect, ...restSelects].map((select) => ({
 			type,
 			isAll,
-			rightSelect: select as AnyGoogleSQLSelect,
+			rightSelect: select as AnyGoogleSqlSelect,
 		}));
 
 		for (const setOperator of setOperators) {
@@ -1048,11 +1047,11 @@ function createSetOperator(type: SetOperator, isAll: boolean): GoogleSQLCreateSe
 			}
 		}
 
-		return (leftSelect as AnyGoogleSQLSelect).addSetOperators(setOperators) as any;
+		return (leftSelect as AnyGoogleSqlSelect).addSetOperators(setOperators) as any;
 	};
 }
 
-const getGoogleSQLSetOperators = () => ({
+const getGoogleSqlSetOperators = () => ({
 	union,
 	unionAll,
 	intersect,

@@ -1,7 +1,7 @@
 import { Spanner, type Database } from '@google-cloud/spanner';
 import * as V1 from '~/_relations.ts';
-import { GoogleSQLDatabase } from '~/google-sql-core/db.ts';
-import { GoogleSQLDialect } from '~/google-sql-core/dialect.ts';
+import { GoogleSqlDatabase } from '~/google-sql-core/db.ts';
+import { GoogleSqlDialect } from '~/google-sql-core/dialect.ts';
 import { entityKind } from '~/entity.ts';
 import type { Logger } from '~/logger.ts';
 import { DefaultLogger } from '~/logger.ts';
@@ -24,7 +24,7 @@ export class NodeSpannerDriver {
 
 	constructor(
 		private client: NodeSpannerClient,
-		private dialect: GoogleSQLDialect,
+		private dialect: GoogleSqlDialect,
 		private options: SpannerDriverOptions = {},
 	) {
 	}
@@ -38,7 +38,7 @@ export class NodeSpannerDriver {
 
 export class NodeSpannerDatabase<
 	TSchema extends Record<string, unknown> = Record<string, never>,
-> extends GoogleSQLDatabase<NodeSpannerQueryResultHKT, TSchema> {
+> extends GoogleSqlDatabase<NodeSpannerQueryResultHKT, TSchema> {
 	static override readonly [entityKind]: string = 'NodeSpannerDatabase';
 }
 
@@ -51,7 +51,7 @@ function construct<
 ): NodeSpannerDatabase<TSchema> & {
 	$client: TClient;
 } {
-	const dialect = new GoogleSQLDialect({ casing: config.casing });
+	const dialect = new GoogleSqlDialect({ casing: config.casing });
 	let logger;
 	if (config.logger === true) {
 		logger = new DefaultLogger();

@@ -1,12 +1,12 @@
-import type { GoogleSQLDialect } from '~/google-sql-core/dialect.ts';
+import type { GoogleSqlDialect } from '~/google-sql-core/dialect.ts';
 import type {
-	GoogleSQLPreparedQuery,
-	GoogleSQLQueryResultHKT,
-	GoogleSQLQueryResultKind,
-	GoogleSQLSession,
+	GoogleSqlPreparedQuery,
+	GoogleSqlQueryResultHKT,
+	GoogleSqlQueryResultKind,
+	GoogleSqlSession,
 	PreparedQueryConfig,
 } from '~/google-sql-core/session.ts';
-import type { GoogleSQLTable } from '~/google-sql-core/table.ts';
+import type { GoogleSqlTable } from '~/google-sql-core/table.ts';
 import { entityKind } from '~/entity.ts';
 import type { TypedQueryBuilder } from '~/query-builders/query-builder.ts';
 import type { SelectResultFields } from '~/query-builders/select.types.ts';
@@ -15,20 +15,20 @@ import { QueryPromise } from '~/query-promise.ts';
 import type { RunnableQuery } from '~/runnable-query.ts';
 import { SelectionProxyHandler } from '~/selection-proxy.ts';
 import type { ColumnsSelection, Query, SQL, SQLWrapper } from '~/sql/sql.ts';
-import type { Subquery } from '~/subquery.ts';
 import { getTableName, Table } from '~/table.ts';
 import { tracer } from '~/tracing.ts';
 import { orderSelectedFields } from '~/utils.ts';
-import type { GoogleSQLColumn } from '../columns/common.ts';
+import type { GoogleSqlColumn } from '../columns/common.ts';
 import type { SelectedFieldsFlat, SelectedFieldsOrdered } from './select.types.ts';
+import {GoogleSqlInsertWithout} from "./insert";
 
-export type GoogleSQLDeleteWithout<
-	T extends AnyGoogleSQLDeleteBase,
+export type GoogleSqlDeleteWithout<
+	T extends AnyGoogleSqlDeleteBase,
 	TDynamic extends boolean,
 	K extends keyof T & string,
 > = TDynamic extends true ? T
 	: Omit<
-		GoogleSQLDeleteBase<
+		GoogleSqlDeleteBase<
 			T['_']['table'],
 			T['_']['queryResult'],
 			T['_']['selectedFields'],
@@ -39,26 +39,26 @@ export type GoogleSQLDeleteWithout<
 		T['_']['excludedMethods'] | K
 	>;
 
-export type GoogleSQLDelete<
-	TTable extends GoogleSQLTable = GoogleSQLTable,
-	TQueryResult extends GoogleSQLQueryResultHKT = GoogleSQLQueryResultHKT,
+export type GoogleSqlDelete<
+	TTable extends GoogleSqlTable = GoogleSqlTable,
+	TQueryResult extends GoogleSqlQueryResultHKT = GoogleSqlQueryResultHKT,
 	TSelectedFields extends ColumnsSelection | undefined = undefined,
 	TReturning extends Record<string, unknown> | undefined = Record<string, unknown> | undefined,
-> = GoogleSQLDeleteBase<TTable, TQueryResult, TSelectedFields, TReturning, true, never>;
+> = GoogleSqlDeleteBase<TTable, TQueryResult, TSelectedFields, TReturning, true, never>;
 
-export interface GoogleSQLDeleteConfig {
+export interface GoogleSqlDeleteConfig {
 	where?: SQL | undefined;
-	table: GoogleSQLTable;
+	table: GoogleSqlTable;
 	returningFields?: SelectedFieldsFlat;
 	returning?: SelectedFieldsOrdered;
-	withList?: Subquery[];
+	withAction?: boolean;
 }
 
-export type GoogleSQLDeleteReturningAll<
-	T extends AnyGoogleSQLDeleteBase,
+export type GoogleSqlDeleteReturningAll<
+	T extends AnyGoogleSqlDeleteBase,
 	TDynamic extends boolean,
-> = GoogleSQLDeleteWithout<
-	GoogleSQLDeleteBase<
+> = GoogleSqlDeleteWithout<
+	GoogleSqlDeleteBase<
 		T['_']['table'],
 		T['_']['queryResult'],
 		T['_']['table']['_']['columns'],
@@ -70,12 +70,12 @@ export type GoogleSQLDeleteReturningAll<
 	'returning'
 >;
 
-export type GoogleSQLDeleteReturning<
-	T extends AnyGoogleSQLDeleteBase,
+export type GoogleSqlDeleteReturning<
+	T extends AnyGoogleSqlDeleteBase,
 	TDynamic extends boolean,
 	TSelectedFields extends SelectedFieldsFlat,
-> = GoogleSQLDeleteWithout<
-	GoogleSQLDeleteBase<
+> = GoogleSqlDeleteWithout<
+	GoogleSqlDeleteBase<
 		T['_']['table'],
 		T['_']['queryResult'],
 		TSelectedFields,
@@ -87,25 +87,25 @@ export type GoogleSQLDeleteReturning<
 	'returning'
 >;
 
-export type GoogleSQLDeletePrepare<T extends AnyGoogleSQLDeleteBase> = GoogleSQLPreparedQuery<
+export type GoogleSqlDeletePrepare<T extends AnyGoogleSqlDeleteBase> = GoogleSqlPreparedQuery<
 	PreparedQueryConfig & {
-		execute: T['_']['returning'] extends undefined ? GoogleSQLQueryResultKind<T['_']['queryResult'], never>
+		execute: T['_']['returning'] extends undefined ? GoogleSqlQueryResultKind<T['_']['queryResult'], never>
 			: T['_']['returning'][];
 	}
 >;
 
-export type GoogleSQLDeleteDynamic<T extends AnyGoogleSQLDeleteBase> = GoogleSQLDelete<
+export type GoogleSqlDeleteDynamic<T extends AnyGoogleSqlDeleteBase> = GoogleSqlDelete<
 	T['_']['table'],
 	T['_']['queryResult'],
 	T['_']['selectedFields'],
 	T['_']['returning']
 >;
 
-export type AnyGoogleSQLDeleteBase = GoogleSQLDeleteBase<any, any, any, any, any, any>;
+export type AnyGoogleSqlDeleteBase = GoogleSqlDeleteBase<any, any, any, any, any, any>;
 
-export interface GoogleSQLDeleteBase<
-	TTable extends GoogleSQLTable,
-	TQueryResult extends GoogleSQLQueryResultHKT,
+export interface GoogleSqlDeleteBase<
+	TTable extends GoogleSqlTable,
+	TQueryResult extends GoogleSqlQueryResultHKT,
 	TSelectedFields extends ColumnsSelection | undefined = undefined,
 	TReturning extends Record<string, unknown> | undefined = undefined,
 	TDynamic extends boolean = false,
@@ -113,59 +113,59 @@ export interface GoogleSQLDeleteBase<
 > extends
 	TypedQueryBuilder<
 		TSelectedFields,
-		TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[]
+		TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[]
 	>,
-	QueryPromise<TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[]>,
+	QueryPromise<TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[]>,
 	RunnableQuery<
-		TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[],
-		'google-sql'
+		TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[],
+		'googlesql'
 	>,
 	SQLWrapper
 {
 	readonly _: {
-		readonly dialect: 'google-sql';
+		readonly dialect: 'googlesql';
 		readonly table: TTable;
 		readonly queryResult: TQueryResult;
 		readonly selectedFields: TSelectedFields;
 		readonly returning: TReturning;
 		readonly dynamic: TDynamic;
 		readonly excludedMethods: TExcludedMethods;
-		readonly result: TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[];
+		readonly result: TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[];
 	};
 }
 
-export class GoogleSQLDeleteBase<
-	TTable extends GoogleSQLTable,
-	TQueryResult extends GoogleSQLQueryResultHKT,
+export class GoogleSqlDeleteBase<
+	TTable extends GoogleSqlTable,
+	TQueryResult extends GoogleSqlQueryResultHKT,
 	TSelectedFields extends ColumnsSelection | undefined = undefined,
 	TReturning extends Record<string, unknown> | undefined = undefined,
 	TDynamic extends boolean = false,
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	TExcludedMethods extends string = never,
-> extends QueryPromise<TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[]>
+> extends QueryPromise<TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[]>
 	implements
 		TypedQueryBuilder<
 			TSelectedFields,
-			TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[]
+			TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[]
 		>,
 		RunnableQuery<
-			TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[],
-			'google-sql'
+			TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[],
+			'googlesql'
 		>,
 		SQLWrapper
 {
-	static override readonly [entityKind]: string = 'GoogleSQLDelete';
+	static override readonly [entityKind]: string = 'GoogleSqlDelete';
 
-	private config: GoogleSQLDeleteConfig;
+	private config: GoogleSqlDeleteConfig;
 
 	constructor(
 		table: TTable,
-		private session: GoogleSQLSession,
-		private dialect: GoogleSQLDialect,
-		withList?: Subquery[],
+		private session: GoogleSqlSession,
+		private dialect: GoogleSqlDialect,
+		withAction?: boolean,
 	) {
 		super();
-		this.config = { table, withList };
+		this.config = { table, withAction };
 	}
 
 	/**
@@ -197,7 +197,7 @@ export class GoogleSQLDeleteBase<
 	 * await db.delete(cars).where(or(eq(cars.color, 'green'), eq(cars.color, 'blue')));
 	 * ```
 	 */
-	where(where: SQL | undefined): GoogleSQLDeleteWithout<this, TDynamic, 'where'> {
+	where(where: SQL | undefined): GoogleSqlDeleteWithout<this, TDynamic, 'where'> {
 		this.config.where = where;
 		return this as any;
 	}
@@ -222,15 +222,36 @@ export class GoogleSQLDeleteBase<
 	 *   .returning({ id: cars.id, brand: cars.brand });
 	 * ```
 	 */
-	returning(): GoogleSQLDeleteReturningAll<this, TDynamic>;
+	returning(): GoogleSqlDeleteReturningAll<this, TDynamic>;
 	returning<TSelectedFields extends SelectedFieldsFlat>(
 		fields: TSelectedFields,
-	): GoogleSQLDeleteReturning<this, TDynamic, TSelectedFields>;
+	): GoogleSqlDeleteReturning<this, TDynamic, TSelectedFields>;
 	returning(
 		fields: SelectedFieldsFlat = this.config.table[Table.Symbol.Columns],
-	): GoogleSQLDeleteReturning<this, TDynamic, any> | GoogleSQLDeleteReturningAll<this, TDynamic> {
+	): GoogleSqlDeleteReturning<this, TDynamic, any> | GoogleSqlDeleteReturningAll<this, TDynamic> {
 		this.config.returningFields = fields;
-		this.config.returning = orderSelectedFields<GoogleSQLColumn>(fields);
+		this.config.returning = orderSelectedFields<GoogleSqlColumn>(fields);
+		return this as any;
+	}
+
+	/**
+	 * Adds `with action` to the `then return` clause.
+	 *
+	 * This adds a string column called `ACTION` to the result row set. Each value in this column
+	 * represents the type of action that was applied during statement execution (INSERT, DELETE, UPDATE).
+	 * The ACTION column is appended as the last output column.
+	 *
+	 * Must be used together with `.returning()`.
+	 *
+	 * @example
+	 * ```ts
+	 * const result = await db.delete(cars)
+	 *   .returning()
+	 *   .withAction();
+	 * ```
+	 */
+	withAction(): GoogleSqlDeleteWithout<this, TDynamic, 'withAction'> {
+		this.config.withAction = true;
 		return this as any;
 	}
 
@@ -245,12 +266,12 @@ export class GoogleSQLDeleteBase<
 	}
 
 	/** @internal */
-	_prepare(name?: string, generateName = false): GoogleSQLDeletePrepare<this> {
+	_prepare(name?: string, generateName = false): GoogleSqlDeletePrepare<this> {
 		return tracer.startActiveSpan('drizzle.prepareQuery', () => {
 			const query = this.dialect.sqlToQuery(this.getSQL());
 			return this.session.prepareQuery<
 				PreparedQueryConfig & {
-					execute: TReturning extends undefined ? GoogleSQLQueryResultKind<TQueryResult, never> : TReturning[];
+					execute: TReturning extends undefined ? GoogleSqlQueryResultKind<TQueryResult, never> : TReturning[];
 				}
 			>(
 				query,
@@ -261,7 +282,7 @@ export class GoogleSQLDeleteBase<
 		});
 	}
 
-	prepare(name?: string): GoogleSQLDeletePrepare<this> {
+	prepare(name?: string): GoogleSqlDeletePrepare<this> {
 		return this._prepare(name, true);
 	}
 
@@ -287,7 +308,7 @@ export class GoogleSQLDeleteBase<
 		) as this['_']['selectedFields'];
 	}
 
-	$dynamic(): GoogleSQLDeleteDynamic<this> {
+	$dynamic(): GoogleSqlDeleteDynamic<this> {
 		return this as any;
 	}
 }

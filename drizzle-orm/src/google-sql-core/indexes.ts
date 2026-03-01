@@ -1,9 +1,9 @@
 import { entityKind, is } from '~/entity.ts';
 import { SQL } from '~/sql/sql.ts';
 import { ExtraConfigColumn } from './columns/index.ts';
-import type { GoogleSQLColumn } from './columns/index.ts';
+import type { GoogleSqlColumn } from './columns/index.ts';
 import { IndexedColumn } from './columns/index.ts';
-import type { GoogleSQLTable } from './table.ts';
+import type { GoogleSqlTable } from './table.ts';
 
 interface IndexConfig {
 	name?: string;
@@ -23,13 +23,13 @@ interface IndexConfig {
 	/**
 	 * Columns to include in the STORING clause.
 	 */
-	storing?: GoogleSQLColumn[];
+	storing?: GoogleSqlColumn[];
 
 	/**
-	 * Condition for partial index.
+	 * Only include rows where the specified columns are NOT NULL.
 	 * In Spanner, only `column_name IS NOT NULL` predicates are supported.
 	 */
-	where?: SQL;
+	whereIsNotNull?: GoogleSqlColumn[];
 
 	/**
 	 * Table name for the INTERLEAVE IN clause.
@@ -37,17 +37,17 @@ interface IndexConfig {
 	interleaveIn?: string;
 }
 
-export type IndexColumn = GoogleSQLColumn;
+export type IndexColumn = GoogleSqlColumn;
 
 export class IndexBuilderOn {
-	static readonly [entityKind]: string = 'GoogleSQLIndexBuilderOn';
+	static readonly [entityKind]: string = 'GoogleSqlIndexBuilderOn';
 
 	constructor(private unique: boolean, private name?: string) {}
 
 	on(
 		...columns: [
-			Partial<ExtraConfigColumn> | SQL | GoogleSQLColumn,
-			...Partial<ExtraConfigColumn | SQL | GoogleSQLColumn>[],
+			Partial<ExtraConfigColumn> | SQL | GoogleSqlColumn,
+			...Partial<ExtraConfigColumn | SQL | GoogleSqlColumn>[],
 		]
 	): IndexBuilder {
 		return new IndexBuilder(
@@ -67,7 +67,7 @@ export class IndexBuilderOn {
 					return clonedIndexedColumn;
 				}
 
-				it = it as GoogleSQLColumn;
+				it = it as GoogleSqlColumn;
 				return new IndexedColumn(
 					it.name,
 					!!it.keyAsName,
@@ -83,14 +83,14 @@ export class IndexBuilderOn {
 }
 
 export interface AnyIndexBuilder {
-	build(table: GoogleSQLTable): Index;
+	build(table: GoogleSqlTable): Index;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface IndexBuilder extends AnyIndexBuilder {}
 
 export class IndexBuilder implements AnyIndexBuilder {
-	static readonly [entityKind]: string = 'GoogleSQLIndexBuilder';
+	static readonly [entityKind]: string = 'GoogleSqlIndexBuilder';
 
 	/** @internal */
 	config: IndexConfig;
@@ -120,7 +120,7 @@ export class IndexBuilder implements AnyIndexBuilder {
 	/**
 	 * Specify columns for the STORING clause.
 	 */
-	storing(...columns: [GoogleSQLColumn, ...GoogleSQLColumn[]]): this {
+	storing(...columns: [GoogleSqlColumn, ...GoogleSqlColumn[]]): this {
 		this.config.storing = columns;
 		return this;
 	}
@@ -143,25 +143,25 @@ export class IndexBuilder implements AnyIndexBuilder {
 	}
 
 	/** @internal */
-	build(table: GoogleSQLTable): Index {
+	build(table: GoogleSqlTable): Index {
 		return new Index(this.config, table);
 	}
 }
 
 export class Index {
-	static readonly [entityKind]: string = 'GoogleSQLIndex';
+	static readonly [entityKind]: string = 'GoogleSqlIndex';
 
-	readonly config: IndexConfig & { table: GoogleSQLTable };
+	readonly config: IndexConfig & { table: GoogleSqlTable };
 	readonly isNameExplicit: boolean;
 
-	constructor(config: IndexConfig, table: GoogleSQLTable) {
+	constructor(config: IndexConfig, table: GoogleSqlTable) {
 		this.config = { ...config, table };
 		this.isNameExplicit = !!config.name;
 	}
 }
 
-export type GetColumnsTableName<TColumns> = TColumns extends GoogleSQLColumn ? TColumns['_']['name']
-	: TColumns extends GoogleSQLColumn[] ? TColumns[number]['_']['name']
+export type GetColumnsTableName<TColumns> = TColumns extends GoogleSqlColumn ? TColumns['_']['name']
+	: TColumns extends GoogleSqlColumn[] ? TColumns[number]['_']['name']
 	: never;
 
 export function index(name?: string): IndexBuilderOn {

@@ -1,23 +1,23 @@
-import type { GoogleSQLDialectConfig } from '~/google-sql-core/dialect.ts';
-import { GoogleSQLDialect } from '~/google-sql-core/dialect.ts';
+import type { GoogleSqlDialectConfig } from '~/google-sql-core/dialect.ts';
+import { GoogleSqlDialect } from '~/google-sql-core/dialect.ts';
 import { entityKind, is } from '~/entity.ts';
 import type { TypedQueryBuilder } from '~/query-builders/query-builder.ts';
 import { SelectionProxyHandler } from '~/selection-proxy.ts';
 import type { ColumnsSelection, SQL } from '~/sql/sql.ts';
 import { WithSubquery } from '~/subquery.ts';
 import type { WithBuilder } from '../subquery.ts';
-import { GoogleSQLSelectBuilder } from './select.ts';
+import { GoogleSqlSelectBuilder } from './select.ts';
 import type { SelectedFields } from './select.types.ts';
 
 export class QueryBuilder {
-	static readonly [entityKind]: string = 'GoogleSQLQueryBuilder';
+	static readonly [entityKind]: string = 'GoogleSqlQueryBuilder';
 
-	private dialect: GoogleSQLDialect | undefined;
-	private dialectConfig: GoogleSQLDialectConfig | undefined;
+	private dialect: GoogleSqlDialect | undefined;
+	private dialectConfig: GoogleSqlDialectConfig | undefined;
 
-	constructor(dialect?: GoogleSQLDialect | GoogleSQLDialectConfig) {
-		this.dialect = is(dialect, GoogleSQLDialect) ? dialect : undefined;
-		this.dialectConfig = is(dialect, GoogleSQLDialect) ? undefined : dialect;
+	constructor(dialect?: GoogleSqlDialect | GoogleSqlDialectConfig) {
+		this.dialect = is(dialect, GoogleSqlDialect) ? dialect : undefined;
+		this.dialectConfig = is(dialect, GoogleSqlDialect) ? undefined : dialect;
 	}
 
 	$with: WithBuilder = (alias: string, selection?: ColumnsSelection) => {
@@ -48,12 +48,12 @@ export class QueryBuilder {
 	with(...queries: WithSubquery[]) {
 		const self = this;
 
-		function select(): GoogleSQLSelectBuilder<undefined, 'qb'>;
-		function select<TSelection extends SelectedFields>(fields: TSelection): GoogleSQLSelectBuilder<TSelection, 'qb'>;
+		function select(): GoogleSqlSelectBuilder<undefined, 'qb'>;
+		function select<TSelection extends SelectedFields>(fields: TSelection): GoogleSqlSelectBuilder<TSelection, 'qb'>;
 		function select<TSelection extends SelectedFields>(
 			fields?: TSelection,
-		): GoogleSQLSelectBuilder<TSelection | undefined, 'qb'> {
-			return new GoogleSQLSelectBuilder({
+		): GoogleSqlSelectBuilder<TSelection | undefined, 'qb'> {
+			return new GoogleSqlSelectBuilder({
 				fields: fields ?? undefined,
 				session: undefined,
 				dialect: self.getDialect(),
@@ -61,14 +61,14 @@ export class QueryBuilder {
 			});
 		}
 
-		function selectDistinct(): GoogleSQLSelectBuilder<undefined, 'qb'>;
+		function selectDistinct(): GoogleSqlSelectBuilder<undefined, 'qb'>;
 		function selectDistinct<TSelection extends SelectedFields>(
 			fields: TSelection,
-		): GoogleSQLSelectBuilder<TSelection, 'qb'>;
+		): GoogleSqlSelectBuilder<TSelection, 'qb'>;
 		function selectDistinct<TSelection extends SelectedFields>(
 			fields?: TSelection,
-		): GoogleSQLSelectBuilder<TSelection | undefined, 'qb'> {
-			return new GoogleSQLSelectBuilder({
+		): GoogleSqlSelectBuilder<TSelection | undefined, 'qb'> {
+			return new GoogleSqlSelectBuilder({
 				fields: fields ?? undefined,
 				session: undefined,
 				dialect: self.getDialect(),
@@ -79,24 +79,24 @@ export class QueryBuilder {
 		return { select, selectDistinct };
 	}
 
-	select(): GoogleSQLSelectBuilder<undefined, 'qb'>;
-	select<TSelection extends SelectedFields>(fields: TSelection): GoogleSQLSelectBuilder<TSelection, 'qb'>;
+	select(): GoogleSqlSelectBuilder<undefined, 'qb'>;
+	select<TSelection extends SelectedFields>(fields: TSelection): GoogleSqlSelectBuilder<TSelection, 'qb'>;
 	select<TSelection extends SelectedFields>(
 		fields?: TSelection,
-	): GoogleSQLSelectBuilder<TSelection | undefined, 'qb'> {
-		return new GoogleSQLSelectBuilder({
+	): GoogleSqlSelectBuilder<TSelection | undefined, 'qb'> {
+		return new GoogleSqlSelectBuilder({
 			fields: fields ?? undefined,
 			session: undefined,
 			dialect: this.getDialect(),
 		});
 	}
 
-	selectDistinct(): GoogleSQLSelectBuilder<undefined>;
-	selectDistinct<TSelection extends SelectedFields>(fields: TSelection): GoogleSQLSelectBuilder<TSelection>;
+	selectDistinct(): GoogleSqlSelectBuilder<undefined>;
+	selectDistinct<TSelection extends SelectedFields>(fields: TSelection): GoogleSqlSelectBuilder<TSelection>;
 	selectDistinct<TSelection extends SelectedFields>(
 		fields?: TSelection,
-	): GoogleSQLSelectBuilder<TSelection | undefined> {
-		return new GoogleSQLSelectBuilder({
+	): GoogleSqlSelectBuilder<TSelection | undefined> {
+		return new GoogleSqlSelectBuilder({
 			fields: fields ?? undefined,
 			session: undefined,
 			dialect: this.getDialect(),
@@ -107,7 +107,7 @@ export class QueryBuilder {
 	// Lazy load dialect to avoid circular dependency
 	private getDialect() {
 		if (!this.dialect) {
-			this.dialect = new GoogleSQLDialect(this.dialectConfig);
+			this.dialect = new GoogleSqlDialect(this.dialectConfig);
 		}
 
 		return this.dialect;

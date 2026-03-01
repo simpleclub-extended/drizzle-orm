@@ -1,46 +1,46 @@
 import type * as V1 from '~/_relations.ts';
-import type { GoogleSQLDialect } from '~/google-sql-core/dialect.ts';
+import type { GoogleSqlDialect } from '~/google-sql-core/dialect.ts';
 import {
-	GoogleSQLDeleteBase,
-	GoogleSQLInsertBuilder,
-	GoogleSQLSelectBuilder,
-	GoogleSQLUpdateBuilder,
+	GoogleSqlDeleteBase,
+	GoogleSqlInsertBuilder,
+	GoogleSqlSelectBuilder,
+	GoogleSqlUpdateBuilder,
 	QueryBuilder,
 } from '~/google-sql-core/query-builders/index.ts';
 import type {
-	GoogleSQLQueryResultHKT,
-	GoogleSQLQueryResultKind,
-	GoogleSQLSession,
-	GoogleSQLTransaction,
-	GoogleSQLTransactionConfig,
+	GoogleSqlQueryResultHKT,
+	GoogleSqlQueryResultKind,
+	GoogleSqlSession,
+	GoogleSqlTransaction,
+	GoogleSqlTransactionConfig,
 	PreparedQueryConfig,
 } from '~/google-sql-core/session.ts';
-import type { GoogleSQLTable } from '~/google-sql-core/table.ts';
+import type { GoogleSqlTable } from '~/google-sql-core/table.ts';
 import { entityKind } from '~/entity.ts';
 import type { TypedQueryBuilder } from '~/query-builders/query-builder.ts';
 import { SelectionProxyHandler } from '~/selection-proxy.ts';
 import { type ColumnsSelection, type SQL, sql, type SQLWrapper } from '~/sql/sql.ts';
 import { WithSubquery } from '~/subquery.ts';
 import type { DrizzleTypeError } from '~/utils.ts';
-import { GoogleSQLCountBuilder } from './query-builders/count.ts';
+import { GoogleSqlCountBuilder } from './query-builders/count.ts';
 import { RelationalQueryBuilder } from './query-builders/query.ts';
-import { GoogleSQLRaw } from './query-builders/raw.ts';
+import { GoogleSqlRaw } from './query-builders/raw.ts';
 import type { SelectedFields } from './query-builders/select.types.ts';
 import type { WithBuilder } from './subquery.ts';
-import type { GoogleSQLViewBase } from './view-base.ts';
+import type { GoogleSqlViewBase } from './view-base.ts';
 
-export class GoogleSQLDatabase<
-	TQueryResult extends GoogleSQLQueryResultHKT,
+export class GoogleSqlDatabase<
+	TQueryResult extends GoogleSqlQueryResultHKT,
 	TFullSchema extends Record<string, unknown> = Record<string, never>,
 	TSchema extends V1.TablesRelationalConfig = V1.ExtractTablesWithRelations<TFullSchema>,
 > {
-	static readonly [entityKind]: string = 'GoogleSQLDatabase';
+	static readonly [entityKind]: string = 'GoogleSqlDatabase';
 
 	declare readonly _: {
 		readonly schema: TSchema | undefined;
 		readonly fullSchema: TFullSchema;
 		readonly tableNamesMap: Record<string, string>;
-		readonly session: GoogleSQLSession<TQueryResult, TFullSchema, TSchema>;
+		readonly session: GoogleSqlSession<TQueryResult, TFullSchema, TSchema>;
 	};
 
 	_query: TFullSchema extends Record<string, never>
@@ -51,9 +51,9 @@ export class GoogleSQLDatabase<
 
 	constructor(
 		/** @internal */
-		readonly dialect: GoogleSQLDialect,
+		readonly dialect: GoogleSqlDialect,
 		/** @internal */
-		readonly session: GoogleSQLSession<any, any, any>,
+		readonly session: GoogleSqlSession<any, any, any>,
 		schema: V1.RelationalSchemaConfig<TSchema> | undefined,
 	) {
 		this._ = schema
@@ -72,12 +72,12 @@ export class GoogleSQLDatabase<
 		this._query = {} as typeof this['_query'];
 		if (this._.schema) {
 			for (const [tableName, columns] of Object.entries(this._.schema)) {
-				(this._query as GoogleSQLDatabase<TQueryResult, Record<string, any>>['_query'])[tableName] =
+				(this._query as GoogleSqlDatabase<TQueryResult, Record<string, any>>['_query'])[tableName] =
 					new RelationalQueryBuilder(
 						schema!.fullSchema,
 						this._.schema,
 						this._.tableNamesMap,
-						schema!.fullSchema[tableName] as GoogleSQLTable,
+						schema!.fullSchema[tableName] as GoogleSqlTable,
 						columns,
 						dialect,
 						session,
@@ -144,10 +144,10 @@ export class GoogleSQLDatabase<
 	};
 
 	$count(
-		source: GoogleSQLTable | GoogleSQLViewBase | SQL | SQLWrapper,
+		source: GoogleSqlTable | GoogleSqlViewBase | SQL | SQLWrapper,
 		filters?: SQL<unknown>,
 	) {
-		return new GoogleSQLCountBuilder({ source, filters, session: this.session });
+		return new GoogleSqlCountBuilder({ source, filters, session: this.session });
 	}
 
 	/**
@@ -208,12 +208,12 @@ export class GoogleSQLDatabase<
 		 *   .from(cars);
 		 * ```
 		 */
-		function select(): GoogleSQLSelectBuilder<undefined>;
-		function select<TSelection extends SelectedFields>(fields: TSelection): GoogleSQLSelectBuilder<TSelection>;
+		function select(): GoogleSqlSelectBuilder<undefined>;
+		function select<TSelection extends SelectedFields>(fields: TSelection): GoogleSqlSelectBuilder<TSelection>;
 		function select<TSelection extends SelectedFields>(
 			fields?: TSelection,
-		): GoogleSQLSelectBuilder<TSelection | undefined> {
-			return new GoogleSQLSelectBuilder({
+		): GoogleSqlSelectBuilder<TSelection | undefined> {
+			return new GoogleSqlSelectBuilder({
 				fields: fields ?? undefined,
 				session: self.session,
 				dialect: self.dialect,
@@ -245,14 +245,14 @@ export class GoogleSQLDatabase<
 		 *   .orderBy(cars.brand);
 		 * ```
 		 */
-		function selectDistinct(): GoogleSQLSelectBuilder<undefined>;
+		function selectDistinct(): GoogleSqlSelectBuilder<undefined>;
 		function selectDistinct<TSelection extends SelectedFields>(
 			fields: TSelection,
-		): GoogleSQLSelectBuilder<TSelection>;
+		): GoogleSqlSelectBuilder<TSelection>;
 		function selectDistinct<TSelection extends SelectedFields>(
 			fields?: TSelection,
-		): GoogleSQLSelectBuilder<TSelection | undefined> {
-			return new GoogleSQLSelectBuilder({
+		): GoogleSqlSelectBuilder<TSelection | undefined> {
+			return new GoogleSqlSelectBuilder({
 				fields: fields ?? undefined,
 				session: self.session,
 				dialect: self.dialect,
@@ -261,96 +261,7 @@ export class GoogleSQLDatabase<
 			});
 		}
 
-		// todo: Verify if Spanner doesn't support select distinct on.
-
-		/**
-		 * Creates an update query.
-		 *
-		 * Calling this method without `.where()` clause will update all rows in a table. The `.where()` clause specifies which rows should be updated.
-		 *
-		 * Use `.set()` method to specify which values to update.
-		 *
-		 * See docs: {@link https://orm.drizzle.team/docs/update}
-		 *
-		 * @param table The table to update.
-		 *
-		 * @example
-		 *
-		 * ```ts
-		 * // Update all rows in the 'cars' table
-		 * await db.update(cars).set({ color: 'red' });
-		 *
-		 * // Update rows with filters and conditions
-		 * await db.update(cars).set({ color: 'red' }).where(eq(cars.brand, 'BMW'));
-		 *
-		 * // Update with returning clause
-		 * const updatedCar: Car[] = await db.update(cars)
-		 *   .set({ color: 'red' })
-		 *   .where(eq(cars.id, 1))
-		 *   .returning();
-		 * ```
-		 */
-		function update<TTable extends GoogleSQLTable>(table: TTable): GoogleSQLUpdateBuilder<TTable, TQueryResult> {
-			return new GoogleSQLUpdateBuilder(table, self.session, self.dialect, queries);
-		}
-
-		/**
-		 * Creates an insert query.
-		 *
-		 * Calling this method will create new rows in a table. Use `.values()` method to specify which values to insert.
-		 *
-		 * See docs: {@link https://orm.drizzle.team/docs/insert}
-		 *
-		 * @param table The table to insert into.
-		 *
-		 * @example
-		 *
-		 * ```ts
-		 * // Insert one row
-		 * await db.insert(cars).values({ brand: 'BMW' });
-		 *
-		 * // Insert multiple rows
-		 * await db.insert(cars).values([{ brand: 'BMW' }, { brand: 'Porsche' }]);
-		 *
-		 * // Insert with returning clause
-		 * const insertedCar: Car[] = await db.insert(cars)
-		 *   .values({ brand: 'BMW' })
-		 *   .returning();
-		 * ```
-		 */
-		function insert<TTable extends GoogleSQLTable>(table: TTable): GoogleSQLInsertBuilder<TTable, TQueryResult> {
-			return new GoogleSQLInsertBuilder(table, self.session, self.dialect, queries);
-		}
-
-		/**
-		 * Creates a delete query.
-		 *
-		 * Calling this method without `.where()` clause will delete all rows in a table. The `.where()` clause specifies which rows should be deleted.
-		 *
-		 * See docs: {@link https://orm.drizzle.team/docs/delete}
-		 *
-		 * @param table The table to delete from.
-		 *
-		 * @example
-		 *
-		 * ```ts
-		 * // Delete all rows in the 'cars' table
-		 * await db.delete(cars);
-		 *
-		 * // Delete rows with filters and conditions
-		 * await db.delete(cars).where(eq(cars.color, 'green'));
-		 *
-		 * // Delete with returning clause
-		 * const deletedCar: Car[] = await db.delete(cars)
-		 *   .where(eq(cars.id, 1))
-		 *   .returning();
-		 * ```
-		 */
-		function delete_<TTable extends GoogleSQLTable>(table: TTable): GoogleSQLDeleteBase<TTable, TQueryResult> {
-			return new GoogleSQLDeleteBase(table, self.session, self.dialect, queries);
-		}
-
-		return { select, selectDistinct, update, insert, delete: delete_ };
+		return { select, selectDistinct };
 	}
 	/**
 	 * Creates a select query.
@@ -388,10 +299,10 @@ export class GoogleSQLDatabase<
 	 *   .from(cars);
 	 * ```
 	 */
-	select(): GoogleSQLSelectBuilder<undefined>;
-	select<TSelection extends SelectedFields>(fields: TSelection): GoogleSQLSelectBuilder<TSelection>;
-	select<TSelection extends SelectedFields>(fields?: TSelection): GoogleSQLSelectBuilder<TSelection | undefined> {
-		return new GoogleSQLSelectBuilder({
+	select(): GoogleSqlSelectBuilder<undefined>;
+	select<TSelection extends SelectedFields>(fields: TSelection): GoogleSqlSelectBuilder<TSelection>;
+	select<TSelection extends SelectedFields>(fields?: TSelection): GoogleSqlSelectBuilder<TSelection | undefined> {
+		return new GoogleSqlSelectBuilder({
 			fields: fields ?? undefined,
 			session: this.session,
 			dialect: this.dialect,
@@ -422,20 +333,18 @@ export class GoogleSQLDatabase<
 	 *   .orderBy(cars.brand);
 	 * ```
 	 */
-	selectDistinct(): GoogleSQLSelectBuilder<undefined>;
-	selectDistinct<TSelection extends SelectedFields>(fields: TSelection): GoogleSQLSelectBuilder<TSelection>;
+	selectDistinct(): GoogleSqlSelectBuilder<undefined>;
+	selectDistinct<TSelection extends SelectedFields>(fields: TSelection): GoogleSqlSelectBuilder<TSelection>;
 	selectDistinct<TSelection extends SelectedFields>(
 		fields?: TSelection,
-	): GoogleSQLSelectBuilder<TSelection | undefined> {
-		return new GoogleSQLSelectBuilder({
+	): GoogleSqlSelectBuilder<TSelection | undefined> {
+		return new GoogleSqlSelectBuilder({
 			fields: fields ?? undefined,
 			session: this.session,
 			dialect: this.dialect,
 			distinct: true,
 		});
 	}
-
-	// todo: Verify if Spanner doesn't support select distinct on.
 
 	/**
 	 * Creates an update query.
@@ -464,8 +373,8 @@ export class GoogleSQLDatabase<
 	 *   .returning();
 	 * ```
 	 */
-	update<TTable extends GoogleSQLTable>(table: TTable): GoogleSQLUpdateBuilder<TTable, TQueryResult> {
-		return new GoogleSQLUpdateBuilder(table, this.session, this.dialect)
+	update<TTable extends GoogleSqlTable>(table: TTable): GoogleSqlUpdateBuilder<TTable, TQueryResult> {
+		return new GoogleSqlUpdateBuilder(table, this.session, this.dialect)
 	}
 
 	/**
@@ -492,8 +401,8 @@ export class GoogleSQLDatabase<
 	 *   .returning();
 	 * ```
 	 */
-	insert<TTable extends GoogleSQLTable>(table: TTable): GoogleSQLInsertBuilder<TTable, TQueryResult> {
-		return new GoogleSQLInsertBuilder(table, this.session, this.dialect);
+	insert<TTable extends GoogleSqlTable>(table: TTable): GoogleSqlInsertBuilder<TTable, TQueryResult> {
+		return new GoogleSqlInsertBuilder(table, this.session, this.dialect);
 	}
 
 	/**
@@ -520,28 +429,26 @@ export class GoogleSQLDatabase<
 	 *   .returning();
 	 * ```
 	 */
-	delete<TTable extends GoogleSQLTable>(table: TTable): GoogleSQLDeleteBase<TTable, TQueryResult> {
-		return new GoogleSQLDeleteBase(table, this.session, this.dialect);
+	delete<TTable extends GoogleSqlTable>(table: TTable): GoogleSqlDeleteBase<TTable, TQueryResult> {
+		return new GoogleSqlDeleteBase(table, this.session, this.dialect);
 	}
 
 	// todo: Verify if Spanner doesn't support materialised views.
 
-	// todo: Verify if we don't need auth token for Spanner.
-
 	execute<TRow extends Record<string, unknown> = Record<string, unknown>>(
 		query: SQLWrapper | string,
-	): GoogleSQLRaw<GoogleSQLQueryResultKind<TQueryResult, TRow>> {
+	): GoogleSqlRaw<GoogleSqlQueryResultKind<TQueryResult, TRow>> {
 		const sequel = typeof query === 'string' ? sql.raw(query) : query.getSQL();
 		const builtQuery = this.dialect.sqlToQuery(sequel);
 		const prepared = this.session.prepareQuery<
-			PreparedQueryConfig & { execute: GoogleSQLQueryResultKind<TQueryResult, TRow> }
+			PreparedQueryConfig & { execute: GoogleSqlQueryResultKind<TQueryResult, TRow> }
 		>(
 			builtQuery,
 			undefined,
 			undefined,
 			false,
 		);
-		return new GoogleSQLRaw(
+		return new GoogleSqlRaw(
 			() => prepared.execute(undefined),
 			sequel,
 			builtQuery,
@@ -550,20 +457,20 @@ export class GoogleSQLDatabase<
 	}
 
 	transaction<T>(
-		transaction: (tx: GoogleSQLTransaction<TQueryResult, TFullSchema, TSchema>) => Promise<T>,
-		config?: GoogleSQLTransactionConfig,
+		transaction: (tx: GoogleSqlTransaction<TQueryResult, TFullSchema, TSchema>) => Promise<T>,
+		config?: GoogleSqlTransactionConfig,
 	): Promise<T> {
 		return this.session.transaction(transaction, config);
 	}
 }
 
-export type GoogleSQLWithReplicas<Q> = Q & { $primary: Q };
+export type GoogleSqlWithReplicas<Q> = Q & { $primary: Q };
 
 export const withReplicas = <
-	HKT extends GoogleSQLQueryResultHKT,
+	HKT extends GoogleSqlQueryResultHKT,
 	TFullSchema extends Record<string, unknown>,
 	TSchema extends V1.TablesRelationalConfig,
-	Q extends GoogleSQLDatabase<
+	Q extends GoogleSqlDatabase<
 		HKT,
 		TFullSchema,
 		TSchema extends Record<string, unknown> ? V1.ExtractTablesWithRelations<TFullSchema> : TSchema
@@ -572,7 +479,7 @@ export const withReplicas = <
 	primary: Q,
 	replicas: [Q, ...Q[]],
 	getReplica: (replicas: Q[]) => Q = () => replicas[Math.floor(Math.random() * replicas.length)]!,
-): GoogleSQLWithReplicas<Q> => {
+): GoogleSqlWithReplicas<Q> => {
 	const select: Q['select'] = (...args: []) => getReplica(replicas).select(...args);
 	const selectDistinct: Q['selectDistinct'] = (...args: []) => getReplica(replicas).selectDistinct(...args);
 	const $count: Q['$count'] = (...args: [any]) => getReplica(replicas).$count(...args);

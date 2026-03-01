@@ -1,40 +1,40 @@
-import type { AnyGoogleSQLTable } from '~/google-sql-core/table.ts';
+import type { AnyGoogleSqlTable } from '~/google-sql-core/table.ts';
 import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
 import { type Equal, getColumnNameAndConfig } from '~/utils.ts';
-import { GoogleSQLColumn } from './common.ts';
-import { GoogleSQLDateColumnBaseBuilder } from './date.common.ts';
+import { GoogleSqlColumn } from './common.ts';
+import { GoogleSqlDateColumnBaseBuilder } from './date.common.ts';
 
-export class GoogleSQLDateBuilder extends GoogleSQLDateColumnBaseBuilder<{
+export class GoogleSqlDateBuilder extends GoogleSqlDateColumnBaseBuilder<{
 	dataType: 'object date';
 	data: Date;
 	driverParam: string;
 }> {
-	static override readonly [entityKind]: string = 'GoogleSQLDateBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlDateBuilder';
 
 	constructor(name: string) {
-		super(name, 'object date', 'GoogleSQLDate');
+		super(name, 'object date', 'GoogleSqlDate');
 	}
 
 	/** @internal */
 	override build<TTableName extends string>(
-		table: AnyGoogleSQLTable<{ name: TTableName }>,
+		table: AnyGoogleSqlTable<{ name: TTableName }>,
 	) {
-		return new GoogleSQLDate(
+		return new GoogleSqlDate(
 			table,
 			this.config,
 		);
 	}
 }
 
-export class GoogleSQLDate<T extends ColumnBaseConfig<'object date'>> extends GoogleSQLColumn<T> {
-	static override readonly [entityKind]: string = 'GoogleSQLDate';
+export class GoogleSqlDate<T extends ColumnBaseConfig<'object date'>> extends GoogleSqlColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSqlDate';
 
 	getSQLType(): string {
 		return 'date';
 	}
 
-	override mapFromDriverValue(value: string): Date {
+	override mapFromDriverValue(value: unknown): Date {
 		return new Date(value);
 	}
 
@@ -44,30 +44,30 @@ export class GoogleSQLDate<T extends ColumnBaseConfig<'object date'>> extends Go
 	}
 }
 
-export class GoogleSQLDateStringBuilder extends GoogleSQLDateColumnBaseBuilder<{
+export class GoogleSqlDateStringBuilder extends GoogleSqlDateColumnBaseBuilder<{
 	dataType: 'string date';
 	data: string;
 	driverParam: string;
 }> {
-	static override readonly [entityKind]: string = 'GoogleSQLDateStringBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlDateStringBuilder';
 
 	constructor(name: string) {
-		super(name, 'string date', 'GoogleSQLDateString');
+		super(name, 'string date', 'GoogleSqlDateString');
 	}
 
 	/** @internal */
 	override build<TTableName extends string>(
-		table: AnyGoogleSQLTable<{ name: TTableName }>,
+		table: AnyGoogleSqlTable<{ name: TTableName }>,
 	) {
-		return new GoogleSQLDateString(
+		return new GoogleSqlDateString(
 			table,
 			this.config,
 		);
 	}
 }
 
-export class GoogleSQLDateString<T extends ColumnBaseConfig<'string date'>> extends GoogleSQLColumn<T> {
-	static override readonly [entityKind]: string = 'GoogleSQLDateString';
+export class GoogleSqlDateString<T extends ColumnBaseConfig<'string date'>> extends GoogleSqlColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSqlDateString';
 
 	getSQLType(): string {
 		return 'date';
@@ -79,22 +79,22 @@ export class GoogleSQLDateString<T extends ColumnBaseConfig<'string date'>> exte
 	}
 }
 
-export interface GoogleSQLDateConfig<T extends 'date' | 'string' = 'date' | 'string'> {
+export interface GoogleSqlDateConfig<T extends 'date' | 'string' = 'date' | 'string'> {
 	mode: T;
 }
 
-export function date<TMode extends GoogleSQLDateConfig['mode'] & {}>(
-	config?: GoogleSQLDateConfig<TMode>,
-): Equal<TMode, 'date'> extends true ? GoogleSQLDateBuilder : GoogleSQLDateStringBuilder;
-export function date<TMode extends GoogleSQLDateConfig['mode'] & {}>(
+export function date<TMode extends GoogleSqlDateConfig['mode'] & {}>(
+	config?: GoogleSqlDateConfig<TMode>,
+): Equal<TMode, 'date'> extends true ? GoogleSqlDateBuilder : GoogleSqlDateStringBuilder;
+export function date<TMode extends GoogleSqlDateConfig['mode'] & {}>(
 	name: string,
-	config?: GoogleSQLDateConfig<TMode>,
-): Equal<TMode, 'date'> extends true ? GoogleSQLDateBuilder
-	: GoogleSQLDateStringBuilder;
-export function date(a?: string | GoogleSQLDateConfig, b?: GoogleSQLDateConfig) {
-	const { name, config } = getColumnNameAndConfig<GoogleSQLDateConfig>(a, b);
+	config?: GoogleSqlDateConfig<TMode>,
+): Equal<TMode, 'date'> extends true ? GoogleSqlDateBuilder
+	: GoogleSqlDateStringBuilder;
+export function date(a?: string | GoogleSqlDateConfig, b?: GoogleSqlDateConfig) {
+	const { name, config } = getColumnNameAndConfig<GoogleSqlDateConfig>(a, b);
 	if (config?.mode === 'date') {
-		return new GoogleSQLDateBuilder(name);
+		return new GoogleSqlDateBuilder(name);
 	}
-	return new GoogleSQLDateStringBuilder(name);
+	return new GoogleSqlDateStringBuilder(name);
 }

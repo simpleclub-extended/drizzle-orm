@@ -1,14 +1,14 @@
 import { Database, type Transaction } from '@google-cloud/spanner';
 import type * as V1 from '~/_relations.ts';
-import type { GoogleSQLDialect } from '~/google-sql-core/dialect.ts';
-import { GoogleSQLTransaction } from '~/google-sql-core/index.ts';
+import type { GoogleSqlDialect } from '~/google-sql-core/dialect.ts';
+import { GoogleSqlTransaction } from '~/google-sql-core/index.ts';
 import type { SelectedFieldsOrdered } from '~/google-sql-core/query-builders/select.types.ts';
 import type {
-	GoogleSQLQueryResultHKT,
-	GoogleSQLTransactionConfig,
+	GoogleSqlQueryResultHKT,
+	GoogleSqlTransactionConfig,
 	PreparedQueryConfig,
 } from '~/google-sql-core/session.ts';
-import { GoogleSQLPreparedQuery, GoogleSQLSession } from '~/google-sql-core/session.ts';
+import { GoogleSqlPreparedQuery, GoogleSqlSession } from '~/google-sql-core/session.ts';
 import { entityKind, is } from '~/entity.ts';
 import { type Logger, NoopLogger } from '~/logger.ts';
 import { fillPlaceholders, type Query, type SQL } from '~/sql/sql.ts';
@@ -17,7 +17,7 @@ import { type Assume, mapResultRow } from '~/utils.ts';
 
 export type NodeSpannerClient = Database;
 
-export class NodeSpannerPreparedQuery<T extends PreparedQueryConfig> extends GoogleSQLPreparedQuery<T> {
+export class NodeSpannerPreparedQuery<T extends PreparedQueryConfig> extends GoogleSqlPreparedQuery<T> {
 	static override readonly [entityKind]: string = 'NodeSpannerPreparedQuery';
 
 	constructor(
@@ -125,14 +125,14 @@ export interface NodeSpannerSessionOptions {
 export class NodeSpannerSession<
 	TFullSchema extends Record<string, unknown>,
 	TSchema extends V1.TablesRelationalConfig,
-> extends GoogleSQLSession<NodeSpannerQueryResultHKT, TFullSchema, TSchema> {
+> extends GoogleSqlSession<NodeSpannerQueryResultHKT, TFullSchema, TSchema> {
 	static override readonly [entityKind]: string = 'NodeSpannerSession';
 
 	private logger: Logger;
 
 	constructor(
 		private client: NodeSpannerClient | Transaction,
-		dialect: GoogleSQLDialect,
+		dialect: GoogleSqlDialect,
 		private schema: V1.RelationalSchemaConfig<TSchema> | undefined,
 		private options: NodeSpannerSessionOptions = {},
 	) {
@@ -146,7 +146,7 @@ export class NodeSpannerSession<
 		name: string | undefined,
 		isResponseInArrayMode: boolean,
 		customResultMapper?: (rows: unknown[][]) => T['execute'],
-	): GoogleSQLPreparedQuery<T> {
+	): GoogleSqlPreparedQuery<T> {
 		return new NodeSpannerPreparedQuery(
 			this.client,
 			query.sql,
@@ -161,7 +161,7 @@ export class NodeSpannerSession<
 
 	override async transaction<T>(
 		transaction: (tx: NodeSpannerTransaction<TFullSchema, TSchema>) => Promise<T>,
-		_config?: GoogleSQLTransactionConfig | undefined,
+		_config?: GoogleSqlTransactionConfig | undefined,
 	): Promise<T> {
 		if (!is(this.client, Database)) {
 			throw new Error('Transactions can only be started from a Database client, not from within an existing transaction.');
@@ -198,7 +198,7 @@ export class NodeSpannerSession<
 export class NodeSpannerTransaction<
 	TFullSchema extends Record<string, unknown>,
 	TSchema extends V1.TablesRelationalConfig,
-> extends GoogleSQLTransaction<NodeSpannerQueryResultHKT, TFullSchema, TSchema> {
+> extends GoogleSqlTransaction<NodeSpannerQueryResultHKT, TFullSchema, TSchema> {
 	static override readonly [entityKind]: string = 'NodeSpannerTransaction';
 
 	override async transaction<T>(
@@ -208,6 +208,6 @@ export class NodeSpannerTransaction<
 	}
 }
 
-export interface NodeSpannerQueryResultHKT extends GoogleSQLQueryResultHKT {
+export interface NodeSpannerQueryResultHKT extends GoogleSqlQueryResultHKT {
 	type: { rows: Assume<this['row'], Record<string, unknown>>[]; rowCount: number };
 }

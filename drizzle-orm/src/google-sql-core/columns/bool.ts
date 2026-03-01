@@ -1,32 +1,32 @@
-import type { AnyGoogleSQLTable } from '~/google-sql-core/table.ts';
+import type { AnyGoogleSqlTable } from '~/google-sql-core/table.ts';
 import type { ColumnBaseConfig } from '~/column.ts';
 import { entityKind } from '~/entity.ts';
-import { GoogleSQLColumn, GoogleSQLColumnWithArrayBuilder } from './common.ts';
+import { GoogleSqlColumn, GoogleSqlColumnWithArrayBuilder } from './common.ts';
 
-export class GoogleSQLBooleanBuilder extends GoogleSQLColumnWithArrayBuilder<{
+export class GoogleSqlBooleanBuilder extends GoogleSqlColumnWithArrayBuilder<{
 	dataType: 'boolean';
 	data: boolean;
 	driverParam: boolean;
 }> {
-	static override readonly [entityKind]: string = 'GoogleSQLBooleanBuilder';
+	static override readonly [entityKind]: string = 'GoogleSqlBooleanBuilder';
 
 	constructor(name: string) {
-		super(name, 'boolean', 'GoogleSQLBoolean');
+		super(name, 'boolean', 'GoogleSqlBoolean');
 	}
 
 	/** @internal */
 	override build<TTableName extends string>(
-		table: AnyGoogleSQLTable<{ name: TTableName }>,
+		table: AnyGoogleSqlTable<{ name: TTableName }>,
 	) {
-		return new GoogleSQLBoolean(
+		return new GoogleSqlBoolean(
 			table,
 			this.config,
 		);
 	}
 }
 
-export class GoogleSQLBoolean<T extends ColumnBaseConfig<'boolean'>> extends GoogleSQLColumn<T> {
-	static override readonly [entityKind]: string = 'GoogleSQLBoolean';
+export class GoogleSqlBoolean<T extends ColumnBaseConfig<'boolean'>> extends GoogleSqlColumn<T> {
+	static override readonly [entityKind]: string = 'GoogleSqlBoolean';
 
 	getSQLType(): string {
 		return 'bool';
@@ -34,7 +34,7 @@ export class GoogleSQLBoolean<T extends ColumnBaseConfig<'boolean'>> extends Goo
 }
 
 export function bool(name?: string) {
-	return new GoogleSQLBooleanBuilder(name ?? '');
+	return new GoogleSqlBooleanBuilder(name ?? '');
 }
 
 export const boolean = bool;

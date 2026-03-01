@@ -7,37 +7,35 @@ import {
 	type UpdateTableConfig,
 } from '~/table.ts';
 import type { CheckBuilder } from './checks.ts';
-import { type GoogleSQLColumnsBuilders, getGoogleSQLColumnBuilders } from './columns/all.ts';
+import { type GoogleSqlColumnsBuilders, getGoogleSqlColumnBuilders } from './columns/all.ts';
 import type {
-	GoogleSQLColumn,
-	GoogleSQLColumns,
-	GoogleSQLColumnWithArrayBuilder,
+	GoogleSqlColumn,
+	GoogleSqlColumns,
+	GoogleSqlColumnWithArrayBuilder,
 	ExtraConfigColumn,
 } from './columns/common.ts';
 import type { ForeignKey, ForeignKeyBuilder } from './foreign-keys.ts';
 import type { AnyIndexBuilder } from './indexes.ts';
 import type { PrimaryKeyBuilder } from './primary-keys.ts';
-import type { UniqueConstraintBuilder } from './unique-constraint.ts';
 
-export type GoogleSQLTableExtraConfigValue =
+export type GoogleSqlTableExtraConfigValue =
 	| AnyIndexBuilder
 	| CheckBuilder
 	| ForeignKeyBuilder
-	| PrimaryKeyBuilder
-	| UniqueConstraintBuilder;
+	| PrimaryKeyBuilder;
 
-export type GoogleSQLTableExtraConfig = Record<
+export type GoogleSqlTableExtraConfig = Record<
 	string,
-	GoogleSQLTableExtraConfigValue
+	GoogleSqlTableExtraConfigValue
 >;
 
-export type TableConfig = TableConfigBase<GoogleSQLColumns>;
+export type TableConfig = TableConfigBase<GoogleSqlColumns>;
 
 /** @internal */
-export const InlineForeignKeys = Symbol.for('drizzle:GoogleSQLInlineForeignKeys');
+export const InlineForeignKeys = Symbol.for('drizzle:GoogleSqlInlineForeignKeys');
 
-export class GoogleSQLTable<T extends TableConfig = TableConfig> extends Table<T> {
-	static override readonly [entityKind]: string = 'GoogleSQLTable';
+export class GoogleSqlTable<T extends TableConfig = TableConfig> extends Table<T> {
+	static override readonly [entityKind]: string = 'GoogleSqlTable';
 
 	/** @internal */
 	static override readonly Symbol = Object.assign({}, Table.Symbol, {
@@ -49,70 +47,70 @@ export class GoogleSQLTable<T extends TableConfig = TableConfig> extends Table<T
 
 	/** @internal */
 	override [Table.Symbol.ExtraConfigBuilder]:
-		| ((self: Record<string, GoogleSQLColumn>) => GoogleSQLTableExtraConfig)
+		| ((self: Record<string, GoogleSqlColumn>) => GoogleSqlTableExtraConfig)
 		| undefined = undefined;
 
 	/** @internal */
 	override [Table.Symbol.ExtraConfigColumns]: Record<string, ExtraConfigColumn> = {};
 }
 
-export type AnyGoogleSQLTable<TPartial extends Partial<TableConfig> = {}> = GoogleSQLTable<
+export type AnyGoogleSqlTable<TPartial extends Partial<TableConfig> = {}> = GoogleSqlTable<
 	UpdateTableConfig<TableConfig, TPartial>
 >;
 
-export type GoogleSQLTableWithColumns<T extends TableConfig> =
-	& GoogleSQLTable<T>
+export type GoogleSqlTableWithColumns<T extends TableConfig> =
+	& GoogleSqlTable<T>
 	& T['columns']
 	& InferTableColumnsModels<T['columns']>;
 
 /** @internal */
-export function googleSQLTableWithSchema<
+export function googleSqlTableWithSchema<
 	TTableName extends string,
 	TSchemaName extends string | undefined,
 	TColumnsMap extends Record<string, ColumnBuilderBase>,
 >(
 	name: TTableName,
-	columns: TColumnsMap | ((columnTypes: GoogleSQLColumnsBuilders) => TColumnsMap),
+	columns: TColumnsMap | ((columnTypes: GoogleSqlColumnsBuilders) => TColumnsMap),
 	extraConfig:
 		| ((
-			self: BuildExtraConfigColumns<TTableName, TColumnsMap, 'google-sql'>,
-		) => GoogleSQLTableExtraConfig | GoogleSQLTableExtraConfigValue[])
+			self: BuildExtraConfigColumns<TTableName, TColumnsMap, 'googlesql'>,
+		) => GoogleSqlTableExtraConfig | GoogleSqlTableExtraConfigValue[])
 		| undefined,
 	schema: TSchemaName,
 	baseName = name,
-): GoogleSQLTableWithColumns<{
+): GoogleSqlTableWithColumns<{
 	name: TTableName;
 	schema: TSchemaName;
-	columns: BuildColumns<TTableName, TColumnsMap, 'google-sql'>;
-	dialect: 'google-sql';
+	columns: BuildColumns<TTableName, TColumnsMap, 'googlesql'>;
+	dialect: 'googlesql';
 }> {
-	const rawTable = new GoogleSQLTable<{
+	const rawTable = new GoogleSqlTable<{
 		name: TTableName;
 		schema: TSchemaName;
-		columns: BuildColumns<TTableName, TColumnsMap, 'google-sql'>;
-		dialect: 'google-sql';
+		columns: BuildColumns<TTableName, TColumnsMap, 'googlesql'>;
+		dialect: 'googlesql';
 	}>(name, schema, baseName);
 
-	const parsedColumns: TColumnsMap = typeof columns === 'function' ? columns(getGoogleSQLColumnBuilders()) : columns;
+	const parsedColumns: TColumnsMap = typeof columns === 'function' ? columns(getGoogleSqlColumnBuilders()) : columns;
 
 	const builtColumns = Object.fromEntries(
 		Object.entries(parsedColumns).map(([name, colBuilderBase]) => {
-			const colBuilder = colBuilderBase as GoogleSQLColumnWithArrayBuilder;
+			const colBuilder = colBuilderBase as GoogleSqlColumnWithArrayBuilder;
 			colBuilder.setName(name);
 			const column = colBuilder.build(rawTable);
 			rawTable[InlineForeignKeys].push(...colBuilder.buildForeignKeys(column, rawTable));
 			return [name, column];
 		}),
-	) as unknown as BuildColumns<TTableName, TColumnsMap, 'google-sql'>;
+	) as unknown as BuildColumns<TTableName, TColumnsMap, 'googlesql'>;
 
 	const builtColumnsForExtraConfig = Object.fromEntries(
 		Object.entries(parsedColumns).map(([name, colBuilderBase]) => {
-			const colBuilder = colBuilderBase as GoogleSQLColumnWithArrayBuilder;
+			const colBuilder = colBuilderBase as GoogleSqlColumnWithArrayBuilder;
 			colBuilder.setName(name);
 			const column = colBuilder.buildExtraConfigColumn(rawTable);
 			return [name, column];
 		}),
-	) as unknown as BuildExtraConfigColumns<TTableName, TColumnsMap, 'google-sql'>;
+	) as unknown as BuildExtraConfigColumns<TTableName, TColumnsMap, 'googlesql'>;
 
 	const table = Object.assign(rawTable, builtColumns);
 
@@ -120,13 +118,13 @@ export function googleSQLTableWithSchema<
 	table[Table.Symbol.ExtraConfigColumns] = builtColumnsForExtraConfig;
 
 	if (extraConfig) {
-		table[GoogleSQLTable.Symbol.ExtraConfigBuilder] = extraConfig as any;
+		table[GoogleSqlTable.Symbol.ExtraConfigBuilder] = extraConfig as any;
 	}
 
 	return table as any;
 }
 
-export interface GoogleSQLTableFn<TSchema extends string | undefined = undefined> {
+export interface GoogleSqlTableFn<TSchema extends string | undefined = undefined> {
 	<
 		TTableName extends string,
 		TColumnsMap extends Record<string, ColumnBuilderBase>,
@@ -134,13 +132,13 @@ export interface GoogleSQLTableFn<TSchema extends string | undefined = undefined
 		name: TTableName,
 		columns: TColumnsMap,
 		extraConfig?: (
-			self: BuildExtraConfigColumns<TTableName, TColumnsMap, 'google-sql'>,
-		) => GoogleSQLTableExtraConfigValue[],
-	): GoogleSQLTableWithColumns<{
+			self: BuildExtraConfigColumns<TTableName, TColumnsMap, 'googlesql'>,
+		) => GoogleSqlTableExtraConfigValue[],
+	): GoogleSqlTableWithColumns<{
 		name: TTableName;
 		schema: TSchema;
-		columns: BuildColumns<TTableName, TColumnsMap, 'google-sql'>;
-		dialect: 'google-sql';
+		columns: BuildColumns<TTableName, TColumnsMap, 'googlesql'>;
+		dialect: 'googlesql';
 	}>;
 
 	<
@@ -148,24 +146,24 @@ export interface GoogleSQLTableFn<TSchema extends string | undefined = undefined
 		TColumnsMap extends Record<string, ColumnBuilderBase>,
 	>(
 		name: TTableName,
-		columns: (columnTypes: GoogleSQLColumnsBuilders) => TColumnsMap,
+		columns: (columnTypes: GoogleSqlColumnsBuilders) => TColumnsMap,
 		extraConfig?: (
-			self: BuildExtraConfigColumns<TTableName, TColumnsMap, 'google-sql'>,
-		) => GoogleSQLTableExtraConfigValue[],
-	): GoogleSQLTableWithColumns<{
+			self: BuildExtraConfigColumns<TTableName, TColumnsMap, 'googlesql'>,
+		) => GoogleSqlTableExtraConfigValue[],
+	): GoogleSqlTableWithColumns<{
 		name: TTableName;
 		schema: TSchema;
-		columns: BuildColumns<TTableName, TColumnsMap, 'google-sql'>;
-		dialect: 'google-sql';
+		columns: BuildColumns<TTableName, TColumnsMap, 'googlesql'>;
+		dialect: 'googlesql';
 	}>;
 }
 
-export const googleSQLTable: GoogleSQLTableFn = (name, columns, extraConfig) => {
-	return googleSQLTableWithSchema(name, columns, extraConfig, undefined);
+export const googleSqlTable: GoogleSqlTableFn = (name, columns, extraConfig) => {
+	return googleSqlTableWithSchema(name, columns, extraConfig, undefined);
 };
 
-export function googleSQLTableCreator(customizeTableName: (name: string) => string): GoogleSQLTableFn {
+export function googleSqlTableCreator(customizeTableName: (name: string) => string): GoogleSqlTableFn {
 	return (name, columns, extraConfig) => {
-		return googleSQLTableWithSchema(customizeTableName(name) as typeof name, columns, extraConfig, undefined, name);
+		return googleSqlTableWithSchema(customizeTableName(name) as typeof name, columns, extraConfig, undefined, name);
 	};
 }

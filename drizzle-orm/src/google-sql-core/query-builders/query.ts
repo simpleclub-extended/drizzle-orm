@@ -13,27 +13,27 @@ import type { RunnableQuery } from '~/runnable-query.ts';
 import type { Query, SQL, SQLWrapper } from '~/sql/sql.ts';
 import { tracer } from '~/tracing.ts';
 import type { KnownKeysOnly } from '~/utils.ts';
-import type { GoogleSQLDialect } from '../dialect.ts';
-import type { GoogleSQLPreparedQuery, GoogleSQLSession, PreparedQueryConfig } from '../session.ts';
-import type { GoogleSQLTable } from '../table.ts';
+import type { GoogleSqlDialect } from '../dialect.ts';
+import type { GoogleSqlPreparedQuery, GoogleSqlSession, PreparedQueryConfig } from '../session.ts';
+import type { GoogleSqlTable } from '../table.ts';
 
 export class RelationalQueryBuilder<TSchema extends TablesRelationalConfig, TFields extends TableRelationalConfig> {
-	static readonly [entityKind]: string = 'GoogleSQLRelationalQueryBuilder';
+	static readonly [entityKind]: string = 'GoogleSqlRelationalQueryBuilder';
 
 	constructor(
 		private fullSchema: Record<string, unknown>,
 		private schema: TSchema,
 		private tableNamesMap: Record<string, string>,
-		private table: GoogleSQLTable,
+		private table: GoogleSqlTable,
 		private tableConfig: TableRelationalConfig,
-		private dialect: GoogleSQLDialect,
-		private session: GoogleSQLSession,
+		private dialect: GoogleSqlDialect,
+		private session: GoogleSqlSession,
 	) {}
 
 	findMany<TConfig extends DBQueryConfig<'many', true, TSchema, TFields>>(
 		config?: KnownKeysOnly<TConfig, DBQueryConfig<'many', true, TSchema, TFields>>,
-	): GoogleSQLRelationalQuery<BuildQueryResult<TSchema, TFields, TConfig>[]> {
-		return new GoogleSQLRelationalQuery(
+	): GoogleSqlRelationalQuery<BuildQueryResult<TSchema, TFields, TConfig>[]> {
+		return new GoogleSqlRelationalQuery(
 			this.fullSchema,
 			this.schema,
 			this.tableNamesMap,
@@ -48,8 +48,8 @@ export class RelationalQueryBuilder<TSchema extends TablesRelationalConfig, TFie
 
 	findFirst<TSelection extends Omit<DBQueryConfig<'many', true, TSchema, TFields>, 'limit'>>(
 		config?: KnownKeysOnly<TSelection, Omit<DBQueryConfig<'many', true, TSchema, TFields>, 'limit'>>,
-	): GoogleSQLRelationalQuery<BuildQueryResult<TSchema, TFields, TSelection> | undefined> {
-		return new GoogleSQLRelationalQuery(
+	): GoogleSqlRelationalQuery<BuildQueryResult<TSchema, TFields, TSelection> | undefined> {
+		return new GoogleSqlRelationalQuery(
 			this.fullSchema,
 			this.schema,
 			this.tableNamesMap,
@@ -63,13 +63,13 @@ export class RelationalQueryBuilder<TSchema extends TablesRelationalConfig, TFie
 	}
 }
 
-export class GoogleSQLRelationalQuery<TResult> extends QueryPromise<TResult>
-	implements RunnableQuery<TResult, 'google-sql'>, SQLWrapper
+export class GoogleSqlRelationalQuery<TResult> extends QueryPromise<TResult>
+	implements RunnableQuery<TResult, 'googlesql'>, SQLWrapper
 {
-	static override readonly [entityKind]: string = 'GoogleSQLRelationalQuery';
+	static override readonly [entityKind]: string = 'GoogleSqlRelationalQuery';
 
 	declare readonly _: {
-		readonly dialect: 'google-sql';
+		readonly dialect: 'googlesql';
 		readonly result: TResult;
 	};
 
@@ -77,10 +77,10 @@ export class GoogleSQLRelationalQuery<TResult> extends QueryPromise<TResult>
 		private fullSchema: Record<string, unknown>,
 		private schema: TablesRelationalConfig,
 		private tableNamesMap: Record<string, string>,
-		private table: GoogleSQLTable,
+		private table: GoogleSqlTable,
 		private tableConfig: TableRelationalConfig,
-		private dialect: GoogleSQLDialect,
-		private session: GoogleSQLSession,
+		private dialect: GoogleSqlDialect,
+		private session: GoogleSqlSession,
 		private config: DBQueryConfig<'many', true> | true,
 		private mode: 'many' | 'first',
 	) {
@@ -88,7 +88,7 @@ export class GoogleSQLRelationalQuery<TResult> extends QueryPromise<TResult>
 	}
 
 	/** @internal */
-	_prepare(name?: string, generateName = false): GoogleSQLPreparedQuery<PreparedQueryConfig & { execute: TResult }> {
+	_prepare(name?: string, generateName = false): GoogleSqlPreparedQuery<PreparedQueryConfig & { execute: TResult }> {
 		return tracer.startActiveSpan('drizzle.prepareQuery', () => {
 			const { query, builtQuery } = this._toSQL();
 
@@ -110,7 +110,7 @@ export class GoogleSQLRelationalQuery<TResult> extends QueryPromise<TResult>
 		});
 	}
 
-	prepare(name?: string): GoogleSQLPreparedQuery<PreparedQueryConfig & { execute: TResult }> {
+	prepare(name?: string): GoogleSqlPreparedQuery<PreparedQueryConfig & { execute: TResult }> {
 		return this._prepare(name, true);
 	}
 

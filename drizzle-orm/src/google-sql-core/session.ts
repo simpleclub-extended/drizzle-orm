@@ -4,9 +4,8 @@ import { TransactionRollbackError } from '~/errors.ts';
 import type { PreparedQuery } from '~/session.ts';
 import { type Query, type SQL, sql } from '~/sql/index.ts';
 import { tracer } from '~/tracing.ts';
-import type { NeonAuthToken } from '~/utils.ts';
-import { GoogleSQLDatabase } from './db.ts';
-import type { GoogleSQLDialect } from './dialect.ts';
+import { GoogleSqlDatabase } from './db.ts';
+import type { GoogleSqlDialect } from './dialect.ts';
 import type { SelectedFieldsOrdered } from './query-builders/select.types.ts';
 
 export interface PreparedQueryConfig {
@@ -15,10 +14,10 @@ export interface PreparedQueryConfig {
 	values: unknown;
 }
 
-export abstract class GoogleSQLPreparedQuery<T extends PreparedQueryConfig> implements PreparedQuery {
-	constructor(protected query: Query) {}
 
-	protected authToken?: NeonAuthToken;
+
+export abstract class GoogleSqlPreparedQuery<T extends PreparedQueryConfig> implements PreparedQuery {
+	constructor(protected query: Query) {}
 
 	getQuery(): Query {
 		return this.query;
@@ -28,22 +27,16 @@ export abstract class GoogleSQLPreparedQuery<T extends PreparedQueryConfig> impl
 		return response;
 	}
 
-	/** @internal */
-	setToken(token?: NeonAuthToken) {
-		this.authToken = token;
-		return this;
-	}
-
-	static readonly [entityKind]: string = 'GoogleSQLPreparedQuery';
+	static readonly [entityKind]: string = 'GoogleSqlPreparedQuery';
 
 	/** @internal */
 	joinsNotNullableMap?: Record<string, boolean>;
 
 	abstract execute(placeholderValues?: Record<string, unknown>): Promise<T['execute']>;
 	/** @internal */
-	abstract execute(placeholderValues?: Record<string, unknown>, token?: NeonAuthToken): Promise<T['execute']>;
+	abstract execute(placeholderValues?: Record<string, unknown>): Promise<T['execute']>;
 	/** @internal */
-	abstract execute(placeholderValues?: Record<string, unknown>, token?: NeonAuthToken): Promise<T['execute']>;
+	abstract execute(placeholderValues?: Record<string, unknown>): Promise<T['execute']>;
 
 	/** @internal */
 	abstract all(placeholderValues?: Record<string, unknown>): Promise<T['all']>;
@@ -52,18 +45,18 @@ export abstract class GoogleSQLPreparedQuery<T extends PreparedQueryConfig> impl
 	abstract isResponseInArrayMode(): boolean;
 }
 
-export interface GoogleSQLTransactionConfig {
-	accessMode?: 'read only' | 'read write';
+// todo: Implement Spanner transaction config.
+export interface GoogleSqlTransactionConfig {
 }
 
-export abstract class GoogleSQLSession<
-	TQueryResult extends GoogleSQLQueryResultHKT = GoogleSQLQueryResultHKT,
+export abstract class GoogleSqlSession<
+	TQueryResult extends GoogleSqlQueryResultHKT = GoogleSqlQueryResultHKT,
 	TFullSchema extends Record<string, unknown> = Record<string, never>,
 	TSchema extends V1.TablesRelationalConfig = Record<string, never>,
 > {
-	static readonly [entityKind]: string = 'GoogleSQLSession';
+	static readonly [entityKind]: string = 'GoogleSqlSession';
 
-	constructor(protected dialect: GoogleSQLDialect) {}
+	constructor(protected dialect: GoogleSqlDialect) {}
 
 	abstract prepareQuery<T extends PreparedQueryConfig = PreparedQueryConfig>(
 		query: Query,
@@ -71,13 +64,13 @@ export abstract class GoogleSQLSession<
 		name: string | undefined,
 		isResponseInArrayMode: boolean,
 		customResultMapper?: (rows: unknown[][], mapColumnValue?: (value: unknown) => unknown) => T['execute'],
-	): GoogleSQLPreparedQuery<T>;
+	): GoogleSqlPreparedQuery<T>;
 
 	execute<T>(query: SQL): Promise<T>;
 	/** @internal */
-	execute<T>(query: SQL, token?: NeonAuthToken): Promise<T>;
+	execute<T>(query: SQL): Promise<T>;
 	/** @internal */
-	execute<T>(query: SQL, token?: NeonAuthToken): Promise<T> {
+	execute<T>(query: SQL): Promise<T> {
 		return tracer.startActiveSpan('drizzle.operation', () => {
 			const prepared = tracer.startActiveSpan('drizzle.prepareQuery', () => {
 				return this.prepareQuery<PreparedQueryConfig & { execute: T }>(
@@ -103,9 +96,9 @@ export abstract class GoogleSQLSession<
 
 	async count(sql: SQL): Promise<number>;
 	/** @internal */
-	async count(sql: SQL, token?: NeonAuthToken): Promise<number>;
+	async count(sql: SQL): Promise<number>;
 	/** @internal */
-	async count(sql: SQL, token?: NeonAuthToken): Promise<number> {
+	async count(sql: SQL): Promise<number> {
 		const res = await this.execute<[{ count: string }]>(sql, token);
 
 		return Number(
@@ -114,21 +107,21 @@ export abstract class GoogleSQLSession<
 	}
 
 	abstract transaction<T>(
-		transaction: (tx: GoogleSQLTransaction<TQueryResult, TFullSchema, TSchema>) => Promise<T>,
-		config?: GoogleSQLTransactionConfig,
+		transaction: (tx: GoogleSqlTransaction<TQueryResult, TFullSchema, TSchema>) => Promise<T>,
+		config?: GoogleSqlTransactionConfig,
 	): Promise<T>;
 }
 
-export abstract class GoogleSQLTransaction<
-	TQueryResult extends GoogleSQLQueryResultHKT,
+export abstract class GoogleSqlTransaction<
+	TQueryResult extends GoogleSqlQueryResultHKT,
 	TFullSchema extends Record<string, unknown> = Record<string, never>,
 	TSchema extends V1.TablesRelationalConfig = Record<string, never>,
-> extends GoogleSQLDatabase<TQueryResult, TFullSchema, TSchema> {
-	static override readonly [entityKind]: string = 'GoogleSQLTransaction';
+> extends GoogleSqlDatabase<TQueryResult, TFullSchema, TSchema> {
+	static override readonly [entityKind]: string = 'GoogleSqlTransaction';
 
 	constructor(
-		dialect: GoogleSQLDialect,
-		session: GoogleSQLSession<any, any, any>,
+		dialect: GoogleSqlDialect,
+		session: GoogleSqlSession<any, any, any>,
 		protected schema: {
 			fullSchema: Record<string, unknown>;
 			schema: TSchema;
@@ -143,30 +136,17 @@ export abstract class GoogleSQLTransaction<
 		throw new TransactionRollbackError();
 	}
 
-	/** @internal */
-	getTransactionConfigSQL(config: GoogleSQLTransactionConfig): SQL {
-		const chunks: string[] = [];
-		if (config.accessMode) {
-			chunks.push(config.accessMode);
-		}
-		return sql.raw(chunks.join(' '));
-	}
-
-	setTransaction(config: GoogleSQLTransactionConfig): Promise<void> {
-		return this.session.execute(sql`set transaction ${this.getTransactionConfigSQL(config)}`);
-	}
-
 	abstract override transaction<T>(
-		transaction: (tx: GoogleSQLTransaction<TQueryResult, TFullSchema, TSchema>) => Promise<T>,
+		transaction: (tx: GoogleSqlTransaction<TQueryResult, TFullSchema, TSchema>) => Promise<T>,
 	): Promise<T>;
 }
 
-export interface GoogleSQLQueryResultHKT {
-	readonly $brand: 'GoogleSQLQueryResultHKT';
+export interface GoogleSqlQueryResultHKT {
+	readonly $brand: 'GoogleSqlQueryResultHKT';
 	readonly row: unknown;
 	readonly type: unknown;
 }
 
-export type GoogleSQLQueryResultKind<TKind extends GoogleSQLQueryResultHKT, TRow> = (TKind & {
+export type GoogleSqlQueryResultKind<TKind extends GoogleSqlQueryResultHKT, TRow> = (TKind & {
 	readonly row: TRow;
 })['type'];
