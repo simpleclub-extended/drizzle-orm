@@ -81,7 +81,7 @@ export abstract class GoogleSqlSession<
 				);
 			});
 
-			return prepared.setToken(token).execute(undefined, token);
+			return prepared.execute(undefined);
 		});
 	}
 
@@ -99,7 +99,7 @@ export abstract class GoogleSqlSession<
 	async count(sql: SQL): Promise<number>;
 	/** @internal */
 	async count(sql: SQL): Promise<number> {
-		const res = await this.execute<[{ count: string }]>(sql, token);
+		const res = await this.execute<[{ count: string }]>(sql);
 
 		return Number(
 			res[0]['count'],
