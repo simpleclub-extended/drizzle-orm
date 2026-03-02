@@ -1,10 +1,10 @@
 import { entityKind, is } from '~/entity.ts';
 
 export type GoogleSqlSequenceOptions = {
-	sequenceKind: 'bit_reversed_positive';
+	bitReversedPositive?: boolean;
 	skipRangeMin?: number | string;
 	skipRangeMax?: number | string;
-	startWithCounter?: number | string;
+	startWith?: number | string;
 };
 
 export class GoogleSqlSequence {
