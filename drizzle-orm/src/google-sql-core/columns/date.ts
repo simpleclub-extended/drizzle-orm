@@ -34,13 +34,9 @@ export class GoogleSqlDate<T extends ColumnBaseConfig<'object date'>> extends Go
 		return 'date';
 	}
 
-	override mapFromDriverValue(value: unknown): Date {
-		return new Date(value);
-	}
-
-	override mapToDriverValue(value: Date | string): string {
-		if (typeof value === 'string') return value;
-		return value.toISOString();
+	override mapToDriverValue(value: Date | string): Date {
+		if (typeof value === 'string') return new Date(value);
+		return value;
 	}
 }
 
