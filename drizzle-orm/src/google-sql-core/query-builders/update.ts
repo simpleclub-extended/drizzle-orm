@@ -32,7 +32,6 @@ import type {
 	SelectedFields,
 	SelectedFieldsOrdered,
 } from './select.types.ts';
-import {GoogleSqlDeleteWithout} from "./delete";
 
 export interface GoogleSqlUpdateConfig {
 	where?: SQL | undefined;
@@ -320,7 +319,7 @@ export class GoogleSqlUpdateBase<
 	 *   .withAction();
 	 * ```
 	 */
-	withAction(): GoogleSqlDeleteWithout<this, TDynamic, 'withAction'> {
+	withAction(): GoogleSqlUpdateWithout<this, TDynamic, 'withAction'> {
 		this.config.withAction = true;
 		return this as any;
 	}
