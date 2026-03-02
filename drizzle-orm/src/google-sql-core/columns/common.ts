@@ -23,7 +23,6 @@ export interface ReferenceConfig {
 	ref: () => GoogleSqlColumn;
 	config: {
 		name?: string;
-		onUpdate?: UpdateDeleteAction;
 		onDelete?: UpdateDeleteAction;
 	};
 }
@@ -73,9 +72,6 @@ export abstract class GoogleSqlColumnBuilder<
 						const foreignColumn = ref();
 						return { name: config.name, columns: [column], foreignColumns: [foreignColumn] };
 					});
-					if (config.onUpdate) {
-						builder.onUpdate(config.onUpdate);
-					}
 					if (config.onDelete) {
 						builder.onDelete(config.onDelete);
 					}
