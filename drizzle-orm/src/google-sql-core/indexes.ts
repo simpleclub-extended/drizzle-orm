@@ -126,11 +126,11 @@ export class IndexBuilder implements AnyIndexBuilder {
 	}
 
 	/**
-	 * Specify a WHERE clause for the index.
+	 * Specify which columns need to be NOT NULL for the row to be included in the index.
 	 * In Spanner, only `column_name IS NOT NULL` predicates are supported.
 	 */
-	where(condition: SQL): this {
-		this.config.where = condition;
+	whereIsNotNull(columns: GoogleSqlColumn[]): this {
+		this.config.whereIsNotNull = columns;
 		return this;
 	}
 
