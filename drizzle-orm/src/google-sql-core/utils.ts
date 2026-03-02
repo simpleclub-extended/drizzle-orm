@@ -29,8 +29,6 @@ export function getTableConfig<TTable extends GoogleSqlTable>(table: TTable) {
 				indexes.push(builder.build(table));
 			} else if (is(builder, CheckBuilder)) {
 				checks.push(builder.build(table));
-			} else if (is(builder, UniqueConstraintBuilder)) {
-				uniqueConstraints.push(builder.build(table));
 			} else if (is(builder, PrimaryKeyBuilder)) {
 				primaryKeys.push(builder.build(table));
 			} else if (is(builder, ForeignKeyBuilder)) {
